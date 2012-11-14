@@ -1136,11 +1136,11 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 
 		// Get the ROI from the ROI image
 		Rectangle roi = this.roiImg.getStack().getRoi();
-		Roi my_roi = this.roiImg.getRoi();
-		if (my_roi instanceof PolygonRoi)
-			log("My_roi is polygon");
-		else
-			log("My_roi is not polygon");
+		//Roi my_roi = this.roiImg.getRoi();
+		//if (my_roi instanceof PolygonRoi)
+		//	log("My_roi is polygon");
+		//else
+		//	log("My_roi is not polygon");
 
 			// New track, so make the first keyframe at frame 1
 		Keyframe kf = new Keyframe(1, roi);
