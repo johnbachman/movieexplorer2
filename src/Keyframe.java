@@ -1,11 +1,13 @@
-import java.awt.Rectangle;
 import java.io.Serializable;
+import ij.gui.Roi;
+import ij.gui.PolygonRoi;
+import java.awt.Rectangle;
 
 public class Keyframe implements Comparable<Keyframe>, Serializable {
 
 	static final long serialVersionUID = 3L;
 	
-	private Rectangle roi;
+	private Roi roi;
 	private int frame;
 	private boolean momp;
 	private boolean last;
@@ -18,7 +20,7 @@ public class Keyframe implements Comparable<Keyframe>, Serializable {
 	 * @param frame
 	 * @param roi
 	 */
-	public Keyframe(int frame, Rectangle roi) {
+	public Keyframe(int frame, Roi roi) {
 		this(frame, roi, false, false);
 	}
 	
@@ -30,7 +32,7 @@ public class Keyframe implements Comparable<Keyframe>, Serializable {
 	 * @param momp
 	 * @param last
 	 */
-	public Keyframe(int frame, Rectangle roi, boolean momp, boolean last) {
+	public Keyframe(int frame, Roi roi, boolean momp, boolean last) {
 		this.frame = frame;
 		this.roi = roi;
 		this.momp = momp;
@@ -78,8 +80,10 @@ public class Keyframe implements Comparable<Keyframe>, Serializable {
 	
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
+		Rectangle rect = roi.getBounds();
 		sb.append("Frame: " + Integer.toString(this.frame) + " (" +
-			Integer.toString(roi.x) + ", " + Integer.toString(roi.y) + ")");
+			Integer.toString(rect.x) + ", " + Integer.toString(rect.y) + ")");
+		
 		if (momp) {
 			sb.append(", MOMP");
 		}
@@ -99,10 +103,10 @@ public class Keyframe implements Comparable<Keyframe>, Serializable {
 	}
 	
 	// Getters and Setters //////////////////////////////
-	public Rectangle getRoi() {
+	public Roi getRoi() {
 		return roi;
 	}
-	public void setRoi(Rectangle roi) {
+	public void setRoi(Roi roi) {
 		this.roi = roi;
 	}
 	public int getFrame() {

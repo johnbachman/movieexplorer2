@@ -5,12 +5,13 @@ import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import java.awt.Rectangle;
 
 import javax.swing.AbstractListModel;
 
@@ -224,7 +225,7 @@ public class CellTrack extends AbstractListModel {
 
 		Iterator<Keyframe> iter = this.keyframes.iterator();
 		Keyframe nextKf = iter.next();
-		Rectangle roi = nextKf.getRoi();
+		Roi roi = nextKf.getRoi();
 
 		// Loop over all timepoints
 		for (int i = 1; i <= numPoints; i++) {
@@ -233,62 +234,75 @@ public class CellTrack extends AbstractListModel {
 
 			double value = 0.0;
 			int backgroundPixels = 0;
+			int totalPixels = 0;
+			double mean = 0.0;
+			double standard_deviation = 0.0;
 
 			if (i >= nextKf.getFrame()) {
 				roi = nextKf.getRoi();
 				if (iter.hasNext())
 					nextKf = iter.next();
 			}
-			// Loop for Y-Values of roi
-			for (int y = roi.y; y < roi.y + roi.height; y++) { 
-				// Loop for X-Values of roi
-				for (int x = roi.x; x < roi.x + roi.width; x++) { 
-					// Don't count background pixels
-					if (imgProcessor.getPixelValue(x, y) <= 0) {
-						backgroundPixels++;
-					}
-					// Calculate running total of the ratio inside the ROI
-					else {
-						value += imgProcessor.getPixelValue(x, y); 
+
+			// If no roi is selected for this track, skip over the calculation
+			if (roi != null) { 
+	
+				Rectangle rect = roi.getBounds();
+				// Loop for Y-Values of roi
+				for (int y = rect.y; y < rect.y + rect.height; y++) { 
+					// Loop for X-Values of roi
+					for (int x = rect.x; x < rect.x + rect.width; x++) { 						
+						// Don't count pixels outside the region
+						if (roi.contains(x, y)) {
+							totalPixels++;
+	  					value += imgProcessor.getPixelValue(x, y); 
+						}
+						//if (imgProcessor.getPixelValue(x, y) <= 0) {
+						//	backgroundPixels++;
+						//}
+						// Calculate running total of the ratio inside the ROI
+						//else {
+						//	value += imgProcessor.getPixelValue(x, y); 
+						//}
 					}
 				}
-			}
-			
-			// If the whole region is background, value is 0
-			//if (roi.height * roi.width - backgroundPixels <= 0) {
-			//	value = 0;
-			//	
-			//}
-			// Otherwise, calculate the average over the signal pixels
-			//else {
-			value = value / (roi.height * roi.width - backgroundPixels);			
-			//}
-
-			double mean = value;
-			double standard_deviation = 0.0;
-
-			/*
-			// CALCULATE THE STANDARD DEVIATION
-			// HACK--THIS SHOULD ONLY BE SD IF THE USER CHOOSES THAT OPTION
-			// Loop for Y-Values of roi
-			for (int y = roi.y; y < roi.y + roi.height; y++) { 
-				// Loop for X-Values of roi
-				for (int x = roi.x; x < roi.x + roi.width; x++) { 
-					// Don't count background pixels
-					if (imgProcessor.getPixelValue(x, y) <= 0) {
-						backgroundPixels++;
-					}
-					// Calculate running total of the differences from the mean
-					else {
-						double difference = imgProcessor.getPixelValue(x, y) - mean; 
-						standard_deviation += (difference * difference);
+				
+				// If the whole region is background, value is 0
+				//if (roi.height * roi.width - backgroundPixels <= 0) {
+				//	value = 0;
+				//	
+				//}
+				// Otherwise, calculate the average over the signal pixels
+				//else {
+				//value = value / (rect.height * rect.width - backgroundPixels);			
+				value = value / totalPixels;
+				//}
+	
+				mean = value;
+	
+				/*
+				// CALCULATE THE STANDARD DEVIATION
+				// HACK--THIS SHOULD ONLY BE SD IF THE USER CHOOSES THAT OPTION
+				// Loop for Y-Values of roi
+				for (int y = roi.y; y < roi.y + roi.height; y++) { 
+					// Loop for X-Values of roi
+					for (int x = roi.x; x < roi.x + roi.width; x++) { 
+						// Don't count background pixels
+						if (imgProcessor.getPixelValue(x, y) <= 0) {
+							backgroundPixels++;
+						}
+						// Calculate running total of the differences from the mean
+						else {
+							double difference = imgProcessor.getPixelValue(x, y) - mean; 
+							standard_deviation += (difference * difference);
+						}
 					}
 				}
-			}
-			standard_deviation = standard_deviation / (roi.height * roi.width - backgroundPixels);			
-			standard_deviation = Math.sqrt(standard_deviation);			
-			value = standard_deviation;
-			*/
+				standard_deviation = standard_deviation / (roi.height * roi.width - backgroundPixels);			
+				standard_deviation = Math.sqrt(standard_deviation);			
+				value = standard_deviation;
+				*/
+			} // end check of roi
 			
 			if (value < 0) {
 				value = 0;
@@ -334,7 +348,8 @@ public class CellTrack extends AbstractListModel {
 		Iterator<Keyframe> kfIter = keyframes.iterator();
 		while (kfIter.hasNext()) {
 			Keyframe kf = kfIter.next();
-			Roi roi = new Roi(kf.getRoi());
+			//Roi roi = new Roi(kf.getRoi());
+		  Roi roi = (Roi) kf.getRoi().clone();
 			roi.setName(Integer.toString(kf.getFrame()));
 			ol.addElement(roi);
 			ol.drawLabels(true);
@@ -381,7 +396,8 @@ public class CellTrack extends AbstractListModel {
 		
 		for (Keyframe kf : this.keyframes) {
 			if (frame >= kf.getFrame()) {
-				ol = new Overlay(new Roi(kf.getRoi()));
+				//ol = new Overlay(new Roi(kf.getRoi()));
+				ol = new Overlay((Roi) kf.getRoi().clone());
 			}
 		}
 		return ol;

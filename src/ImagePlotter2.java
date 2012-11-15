@@ -581,44 +581,49 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	 */
 	public synchronized void showPlot() {
 		try {
-		// The ImageProcessor for the MovieExplorer
-		ImageProcessor myImageProcessor = super.imp.getProcessor();
+			// The ImageProcessor for the MovieExplorer
+			ImageProcessor myImageProcessor = super.imp.getProcessor();
+	
+			if (myImageProcessor == null) {
+				shutDown();
+				return;
+			}
+	
+			//ValueList = new double[numPoints]; 				
+			//ValueListNorm = new double[numPoints];
+			TheCurrentSlice  = this.roiImg.getCurrentSlice();
+			logloop("showPlot: CurrentSlice " + TheCurrentSlice);
+			//Rectangle roi = roiImg.getStack().getRoi();
+		  Roi roi = roiImg.getRoi(); // will be null if no roi set
+ 	
+		  logloop("About to test if valueimg is roiImg");
+			if (!valueImg.equals(roiImg)) {
+				logloop("Setting Roi on roiImg");
+				valueImg.setRoi(roi); 
+			}
 
-		if (myImageProcessor == null) {
-			shutDown();
-			return;
-		}
-
-		//ValueList = new double[numPoints]; 				
-		//ValueListNorm = new double[numPoints];
-		TheCurrentSlice  = this.roiImg.getCurrentSlice();
-		//log("showPlot: CurrentSlice " + TheCurrentSlice);
-		Rectangle roi = roiImg.getStack().getRoi();
-
-		if (!valueImg.equals(roiImg)) {
-			valueImg.setRoi(new Roi(roi));
-		}
-
-		// Create the temporary track
-		TempCellTrack tempTrack = new TempCellTrack(new Keyframe(1, roi), this.valueImg);
-		
-		drawPlot(myImageProcessor, tempTrack);
-		logloop("showPlot: returned from drawPlot");
-		//super.imp.setTitle(this.title); // Why do this every iteration?
-
-		//this.valueImgOverlay.repaint();
-		//log("showPlot: returned from overlay.repaint");
-		//valueImg.updateAndDraw(); ---
-
-		this.updateOverlay();
-		
-		// Updates the image from the data in the ImageProcessor
-		imp.updateAndDraw();
-		
+			logloop("About to create the temp track");
+			// Create the temporary track
+			TempCellTrack tempTrack = new TempCellTrack(new Keyframe(1, roi), this.valueImg);
+			
+			drawPlot(myImageProcessor, tempTrack);
+			logloop("showPlot: returned from drawPlot");
+			//super.imp.setTitle(this.title); // Why do this every iteration?
+	
+			//this.valueImgOverlay.repaint();
+			//log("showPlot: returned from overlay.repaint");
+			//valueImg.updateAndDraw(); ---
+	
+			this.updateOverlay();
+			
+			// Updates the image from the data in the ImageProcessor
+			imp.updateAndDraw();
+			
 		}
 		catch (Exception ex) {
-			logloop("showPlot exception:");
-			logloop(ex.getMessage());
+			log("showPlot exception:");
+			log(ex.getMessage());
+			log(ex.toString());
 		}
 	}
 
@@ -627,6 +632,7 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	 * Clears the plotting window and calls drawCurves and drawText.
 	 */
 	protected void drawPlot(ImageProcessor ip, TempCellTrack tempTrack) {
+		logloop("in drawPlot");
 		if (ip == null) {
 			shutDown();
 			return;
@@ -643,6 +649,7 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	 * Blanks out the entire plotting window.
 	 */
 	void clear(ImageProcessor ip) {
+		logloop("in ImagePlotter2.clear");
 		if (ip == null)
 			return;
 		if (COLOR) {
@@ -664,6 +671,7 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	 * in the ImageProcessor object.
 	 */
 	void drawCurves(ImageProcessor ip, TempCellTrack tempTrack) {
+		logloop("in drawCurves");
 		double[] valuesToPlot; // = new double[numPoints];
 
 		// Draw plot border
@@ -898,7 +906,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		ip.drawLine(TheCurrentSlice * timestep + XMARGIN, YMARGIN + 1,
 				TheCurrentSlice * timestep + XMARGIN, (PLOT_HEIGHT + YMARGIN - 1));
 		ip.setColor(Color.black);
-
 	}
 
 	/**
@@ -1135,7 +1142,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	synchronized void addNewTrack() {
 
 		// Get the ROI from the ROI image
-		Rectangle roi = this.roiImg.getStack().getRoi();
+		//Rectangle roi = this.roiImg.getStack().getRoi();
+		Roi roi = this.roiImg.getRoi();
 		//Roi my_roi = this.roiImg.getRoi();
 		//if (my_roi instanceof PolygonRoi)
 		//	log("My_roi is polygon");
@@ -1192,7 +1200,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		log("In addTrackWithLast.");
 
 		// Get the ROI from the ROI image
-		Rectangle roi = this.roiImg.getStack().getRoi();
+		//Rectangle roi = this.roiImg.getStack().getRoi();
+	  Roi roi = this.roiImg.getRoi();
 
 		// New track, so make the first keyframe at frame 1
 		Keyframe kf = new Keyframe(1, roi);
@@ -1227,7 +1236,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	
 	void addKeyframe() {
 		log("In addKeyframe. Current track: " + this.currentTrack);
-		Rectangle roi = this.roiImg.getStack().getRoi();
+		//Rectangle roi = this.roiImg.getStack().getRoi();
+	  Roi roi = this.roiImg.getRoi();
 		//this.valueImgOverlay.addPosition(roi.x, roi.y, roi.height, roi.width);
 		int currentSlice  = this.roiImg.getCurrentSlice();
 		boolean momp = this.mompChk.isSelected();
