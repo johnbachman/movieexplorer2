@@ -240,7 +240,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		GridBagConstraints c; // to be used for all GridBag constraints
 		
 		JPanel chooser = new JPanel();
-		chooser.setBorder(BorderFactory.createLineBorder(Color.black));
+		//chooser.setBorder(BorderFactory.createLineBorder(Color.black));
 		chooser.setLayout(new FlowLayout());
 		this.roiImageCbx = new JComboBox(openImages);
 		this.valueImageCbx = new JComboBox(openImages);
@@ -265,7 +265,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		JPanel options = new JPanel();
 		//options.setLayout(new GridLayout(1,5));
 		options.setLayout(new FlowLayout());
-		options.setBorder(BorderFactory.createLineBorder(Color.black));
+		//options.setBorder(BorderFactory.createLineBorder(Color.black));
 		//
 		updateImgListBtn = new JButton("Update Image Lists");
 		updateImgListBtn.addActionListener(this);
@@ -308,7 +308,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		JPanel control = new JPanel();
 		//options.setLayout(new GridLayout(1,5));
 		control.setLayout(new FlowLayout());
-		control.setBorder(BorderFactory.createLineBorder(Color.black));
+		//control.setBorder(BorderFactory.createLineBorder(Color.black));
 		//
 		loadControlBtn = new JButton("Load Control Timecourse...");
 		loadControlBtn.addActionListener(this);
@@ -324,7 +324,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		
 		JPanel overlayPnl = new JPanel();
 		overlayPnl.setLayout(new FlowLayout());
-		overlayPnl.setBorder(BorderFactory.createLineBorder(Color.black));
+		//overlayPnl.setBorder(BorderFactory.createLineBorder(Color.black));
 		JLabel overlayLbl = new JLabel("Region Display Options: ");
 		overlayPnl.add(overlayLbl);
 		String[] overlayOptions = {SHOW_ACTIVE_FOR_SELECTED, 
@@ -348,7 +348,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 			
 		JPanel savedCells = new JPanel();
 		savedCells.setLayout(new GridBagLayout());
-		savedCells.setBorder(BorderFactory.createLineBorder(Color.black));
+		//savedCells.setBorder(BorderFactory.createLineBorder(Color.black));
 		//
 		c = new GridBagConstraints();
 		c.gridx = 0;
@@ -426,7 +426,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		//super.add(savedCells);
 
 		JPanel savePanel = new JPanel(new GridLayout(5,1));
-		savePanel.setBorder(BorderFactory.createLineBorder(Color.black));
+		//savePanel.setBorder(BorderFactory.createLineBorder(Color.black));
 		allTimecourse = new JButton("Get All Timecourses");
 		allTimecourse.addActionListener(this);
 		savePanel.add(allTimecourse);
@@ -994,16 +994,15 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	 */
 	public void windowClosing(WindowEvent e) {
 		super.windowClosing(e);
-		shutDown();
+		this.tcp.windowClosing(e);
 	}
-
 	/**
 	 * Sets a boolean flag, done, which allows the run() loop to terminate.
 	 */
 	public void shutDown() {
 		done = true;
 	}
-
+	
 	String d2s(double d) {
 		if ((int) d == d)
 			return IJ.d2s(d, 0);

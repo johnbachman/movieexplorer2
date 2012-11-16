@@ -1,3 +1,5 @@
+import java.awt.event.WindowEvent;
+
 import ij.gui.ImageWindow;
 import ij.*;
 import ij.gui.ImageWindow;
@@ -52,6 +54,22 @@ public class TimecoursePlotter extends ImageWindow implements Runnable {
 		}
 	}
 	
+	/** 
+	 * Overrides the method in the ImageWindow parent class, adding
+	 * a call to shutDown() to terminate the run loop.
+	 */
+	public void windowClosing(WindowEvent e) {
+		super.windowClosing(e);
+		shutDown();
+	}
+
+	/**
+	 * Sets a boolean flag, done, which allows the run() loop to terminate.
+	 */
+	public void shutDown() {
+		done = true;
+	}
+
 	public static void log(String s) {
 		if (logging) IJ.log(s);
 	}
