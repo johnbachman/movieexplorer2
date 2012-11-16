@@ -3,7 +3,10 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Overlay;
 import ij.gui.Roi;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
 import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -43,6 +46,12 @@ public class CellTrack extends AbstractListModel {
 	private double minValue;
 
 	/**
+	 * The measurements to make on the region.
+	 */
+	int defaultMeasurements = Measurements.AREA + Measurements.STD_DEV + 
+												    Measurements.MEAN;
+
+			/**
 	 * Constructor: sets fields, computes the timecourse, and notifies
 	 * associated ListDataListeners (i.e., lists of keyframes) of its
 	 * contents.
@@ -57,6 +66,7 @@ public class CellTrack extends AbstractListModel {
 		this.imageTitle = img.getTitle();
 		
 		if (keyframes.add(kf)) {
+			Movie_Explorer_2.logloop("CellTrack: about to update timecourse");
 			updateTimecourse();
 			fireContentsChanged(this, 0, getSize());
 		}
@@ -210,6 +220,8 @@ public class CellTrack extends AbstractListModel {
 		//int numPoints = img.getStackSize();
 		int numPoints = this.getLastFrame();
 
+		Calibration cal = new Calibration(img);
+
 		// Re-initialize the trajectory values
 		this.timecourse = new double[numPoints]; 		
 		this.normTimecourse = new double[numPoints];
@@ -231,55 +243,83 @@ public class CellTrack extends AbstractListModel {
 		for (int i = 1; i <= numPoints; i++) {
 			// Get the image processor for the slice
 			imgProcessor = imgStack.getProcessor(i);
-
-			double value = 0.0;
-			int backgroundPixels = 0;
-			int totalPixels = 0;
-			double mean = 0.0;
-			double standard_deviation = 0.0;
-
+			imgProcessor.setRoi(roi);
+			ImageStatistics stats = ImageStatistics.getStatistics(imgProcessor,
+																						defaultMeasurements, cal);
+			
+//			double value = 0.0;
+//			int backgroundPixels = 0;
+//			double runningTotal = 0.0;
+//			int totalPixels = 0;
+//			double mean = 0.0;
+//			double standard_deviation = 0.0;
+//			double sum_sq_err = 0.0;
+//			
 			if (i >= nextKf.getFrame()) {
 				roi = nextKf.getRoi();
 				if (iter.hasNext())
 					nextKf = iter.next();
 			}
+//
+//			// If no roi is selected for this track, skip over the calculation
+//			if (roi != null) { 
+//				Movie_Explorer_2.logloop("Update timecourse: Roi is not null");
+//				
+//				Rectangle rect = roi.getBounds();
+//				double [] allValues = new double[rect.x * rect.y];
+//				Movie_Explorer_2.logloop("declared array of values");
+//				
+//				// Loop for Y-Values of roi
+//				for (int y = rect.y; y < rect.y + rect.height; y++) { 
+//					// Loop for X-Values of roi
+//					for (int x = rect.x; x < rect.x + rect.width; x++) { 						
+//						// Don't count pixels outside the region
+//						if (roi.contains(x, y)) {
+//	  					allValues[totalPixels] += imgProcessor.getPixelValue(x, y); 
+//	  					runningTotal += allValues[totalPixels];
+//							totalPixels++;
+//						}
+//						//if (imgProcessor.getPixelValue(x, y) <= 0) {
+//						//	backgroundPixels++;
+//						//}
+//						// Calculate running total of the ratio inside the ROI
+//						//else {
+//						//	value += imgProcessor.getPixelValue(x, y); 
+//						//}
+//					}
+//				}
+//				
+//				// If the whole region is background, value is 0
+//				//if (roi.height * roi.width - backgroundPixels <= 0) {
+//				//	value = 0;
+//				//	
+//				//}
+//				// Otherwise, calculate the average over the signal pixels
+//				//else {
+//				//value = value / (rect.height * rect.width - backgroundPixels);			
+//				//value = value / totalPixels;
+//				//}
+//				
+//				// Calculate the mean
+//				//for (int p = 0; p < totalPixels; p++) {
+//				//	mean += allValues[p];
+//				//}
+//				mean = runningTotal / totalPixels;
+//				Movie_Explorer_2.logloop("mean value: " + Double.toString(mean));
+//				
+//				// Calculate the SD
+//				for (int p = 0; p < totalPixels; p++) {
+//					sum_sq_err += Math.pow((allValues[p] - mean), 2);
+//				}
+//				if (totalPixels >= 2) {
+//					standard_deviation = Math.sqrt( (1/((double) totalPixels-1)) * sum_sq_err);
+//				}
+//				else {
+//					standard_deviation = 0.0;
+//				}
+//				
+//				Movie_Explorer_2.logloop("SD value: " + Double.toString(standard_deviation));
 
-			// If no roi is selected for this track, skip over the calculation
-			if (roi != null) { 
-	
-				Rectangle rect = roi.getBounds();
-				// Loop for Y-Values of roi
-				for (int y = rect.y; y < rect.y + rect.height; y++) { 
-					// Loop for X-Values of roi
-					for (int x = rect.x; x < rect.x + rect.width; x++) { 						
-						// Don't count pixels outside the region
-						if (roi.contains(x, y)) {
-							totalPixels++;
-	  					value += imgProcessor.getPixelValue(x, y); 
-						}
-						//if (imgProcessor.getPixelValue(x, y) <= 0) {
-						//	backgroundPixels++;
-						//}
-						// Calculate running total of the ratio inside the ROI
-						//else {
-						//	value += imgProcessor.getPixelValue(x, y); 
-						//}
-					}
-				}
-				
-				// If the whole region is background, value is 0
-				//if (roi.height * roi.width - backgroundPixels <= 0) {
-				//	value = 0;
-				//	
-				//}
-				// Otherwise, calculate the average over the signal pixels
-				//else {
-				//value = value / (rect.height * rect.width - backgroundPixels);			
-				value = value / totalPixels;
-				//}
-	
-				mean = value;
-	
 				/*
 				// CALCULATE THE STANDARD DEVIATION
 				// HACK--THIS SHOULD ONLY BE SD IF THE USER CHOOSES THAT OPTION
@@ -302,7 +342,10 @@ public class CellTrack extends AbstractListModel {
 				standard_deviation = Math.sqrt(standard_deviation);			
 				value = standard_deviation;
 				*/
-			} // end check of roi
+			//} // end check of roi
+
+			double value = stats.stdDev;
+			//value = standard_deviation;
 			
 			if (value < 0) {
 				value = 0;

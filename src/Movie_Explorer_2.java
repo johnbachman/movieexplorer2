@@ -163,8 +163,8 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	protected CellTrack currentTrack = null;
 	
 	/** Logging switches. */
-	private static boolean logging = false;
-	private static boolean loopLogging = false;
+	private static boolean logging = true;
+	private static boolean loopLogging = true;
 	
 	/** The instance of the associated timecourse plotter. */
 	TimecoursePlotter tcp;
