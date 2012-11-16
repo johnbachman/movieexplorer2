@@ -80,7 +80,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 
 	ArrayList FrameNumberList;
 
-	// Constants
+	// Constants related to plotting
 	static final int WIN_WIDTH = 800;
 	static final int WIN_HEIGHT = 240;
 	static final int PLOT_WIDTH = 740;
@@ -96,7 +96,8 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 
 	/** The plot refresh interval, in milliseconds */
 	static final int REFRESH_INTERVAL = 100;
-	
+
+	// Constants related to gui
 	static final String PLOT_CURRENT_ROI = "Plot Current Region";
 	static final String PLOT_SELECTED_TRACK = "Plot Selected Track";
 	static final String PLOT_SELECTED_CONTROL_SUBTRACTED = "Plot Selected, Control Subtracted";	
@@ -135,7 +136,8 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	protected JLabel filenameLbl; // Says which tracks file is loaded
 	protected JButton loadControlBtn; // To load the control timecourse
 	protected JLabel controlFileLbl; // Says which control timecourse file is loaded
-	
+
+	// Can probably go to TimecoursePlotter
 	/** The title of the plugin */
 	protected String title;
   /** The thread for the showPlot() update loop. */
@@ -160,15 +162,18 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	protected CellTrackList cellTracks = new CellTrackList();
 	protected CellTrack currentTrack = null;
 	
+	/** Logging switches. */
 	private static boolean logging = true;
 	private static boolean loopLogging = true;
+	
+	/** The instance of the associated timecourse plotter. */
+	TimecoursePlotter tcp;
 	
 	/** Constructor. Displays a plot using the specified title.
 	 * 
 	 * @param title The title of the window
 	 * @param id
 	 */
-	//public ImagePlotter2(String title, ImagePlus id) {
 	public Movie_Explorer_2() {
 		super("Movie Explorer 2");
 		
@@ -179,6 +184,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		
 		setup();					// Build the GUI
 		//thread.start();		// Start running showPlot()
+		this.tcp = new TimecoursePlotter(this);
 	}
 
 	/**
@@ -531,14 +537,14 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	 * The main run loop, refreshes the trajectory plot every 200ms.
 	 */
 	public void run() {
-		while (!done) {
-			try {
-				Thread.sleep(REFRESH_INTERVAL);
-			} catch (InterruptedException e) {
-			}
+		//while (!done) {
+		//	try {
+		//		Thread.sleep(REFRESH_INTERVAL);
+		//	} catch (InterruptedException e) {
+		//	}
 			//showPlot();
-			logloop("Logging");
-		}
+		//	logloop("Logging");
+		//}
 	}
 	
 	/**
