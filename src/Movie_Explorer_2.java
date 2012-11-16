@@ -163,8 +163,8 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	protected CellTrack currentTrack = null;
 	
 	/** Logging switches. */
-	private static boolean logging = true;
-	private static boolean loopLogging = true;
+	private static boolean logging = false;
+	private static boolean loopLogging = false;
 	
 	/** The instance of the associated timecourse plotter. */
 	TimecoursePlotter tcp;
@@ -180,371 +180,32 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		// Call the constructor for ImageWindow
 		//super(NewImage.createRGBImage(title, WIN_WIDTH, WIN_HEIGHT, 1,
 		//		NewImage.FILL_WHITE));
-		//thread = new Thread(this, title);
-		
 		setup();					// Build the GUI
-		//thread.start();		// Start running showPlot()
 		this.tcp = new TimecoursePlotter(this);
+
+		thread = new Thread(this, "Movie Explorer 2");
+		thread.start();		// Start running showPlot()
 	}
 
-	/**
-	 * Gets the open images and returns it as an array of ImagePlusWrapper
-	 * objects.
-	 */
-	private ImagePlusWrapper[] getOpenImages() {
-		int[] wList;
-		wList = WindowManager.getIDList();
-		if (wList == null || wList.length < 1) {
-			IJ.showMessage("You need at least one image open...");
-			return null;
-		}
-		// Store the image objects and titles for the open images
-		//String[] titles = new String[wList.length];
-		ImagePlusWrapper[] openImages = new ImagePlusWrapper[wList.length];
-		for (int i = 0; i < wList.length; i++) {
-			ImagePlusWrapper tempImg = new ImagePlusWrapper(WindowManager.getImage(wList[i]));
-			/*
-			if (tempImg != null)
-				titles[i] = tempImg.getTitle();
-			else
-				titles[i] = "(null)";
-			*/
-			openImages[i] = tempImg;
-		}
-		return openImages;
-	}
-	
-	/**
-	 * Sets up the GUI.
-	 */
-	public void setup() {
 
-		if (IJ.versionLessThan("1.27w"))
-			return;
-
-		//FrameNumberList = new ArrayList();
-
-		// Get the list of open images		
-		ImagePlusWrapper[] openImages = getOpenImages();
-		this.setValueImage(openImages[0].getImage());
-		this.setRoiImage(openImages[0].getImage());
-		
-		if (this.valueImg == null) {
-			IJ.showMessage(this.title, "Out of memory");
-			return;
-		}
-		
-		fc = new JFileChooser();
-		
-		JPanel masterPanel = new JPanel(new GridBagLayout());
-		GridBagConstraints c; // to be used for all GridBag constraints
-		
-		JPanel chooser = new JPanel();
-		//chooser.setBorder(BorderFactory.createLineBorder(Color.black));
-		chooser.setLayout(new FlowLayout());
-		this.roiImageCbx = new JComboBox(openImages);
-		this.valueImageCbx = new JComboBox(openImages);
-		this.roiImageCbx.addActionListener(this);
-		this.valueImageCbx.addActionListener(this);
-		JLabel roiChooserLbl = new JLabel("Region Image: ");
-		JLabel valueChooserLbl = new JLabel("Timecourse Image: ");
-		chooser.add(valueChooserLbl);
-		chooser.add(valueImageCbx);
-		chooser.add(roiChooserLbl);
-		chooser.add(roiImageCbx);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 2;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		masterPanel.add(chooser, c);		
-		//super.add(chooser);
-
-		JPanel options = new JPanel();
-		//options.setLayout(new GridLayout(1,5));
-		options.setLayout(new FlowLayout());
-		//options.setBorder(BorderFactory.createLineBorder(Color.black));
-		//
-		updateImgListBtn = new JButton("Update Image Lists");
-		updateImgListBtn.addActionListener(this);
-		options.add(updateImgListBtn);
-		//
-		String[] plotTypes = {PLOT_CURRENT_ROI,
-				PLOT_SELECTED_TRACK,
-				PLOT_SELECTED_CONTROL_SUBTRACTED,
-				PLOT_ALL_TRACKS,
-				PLOT_ALL_TRACKS_NORMALIZED_MIN,
-				PLOT_ALL_TRACKS_NORMALIZED,
-				PLOT_ALL_CONTROL_SUBTRACTED};
-		plotTypeCbx = new JComboBox(plotTypes);
-		plotTypeCbx.setSelectedItem(PLOT_CURRENT_ROI);
-		options.add(plotTypeCbx);
-		//
-		DrawLinesCheckBox = new JCheckBox("Draw Lines");
-		DrawLinesCheckBox.setSelected(true);
-		options.add(DrawLinesCheckBox);
-		//
-		DrawPointsCheckBox = new JCheckBox("Draw Points");
-		DrawPointsCheckBox.setSelected(true);
-		options.add(DrawPointsCheckBox);
-		//
-		LowPassFilterCheckBox = new JCheckBox("Low-Pass Filter");
-		LowPassFilterCheckBox.setSelected(false);
-		options.add(LowPassFilterCheckBox);
-		//
-		//showActiveRegionChk.setSelected(false);
-		//options.add(showActiveRegionChk);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		masterPanel.add(options, c);
-	
-		JPanel control = new JPanel();
-		//options.setLayout(new GridLayout(1,5));
-		control.setLayout(new FlowLayout());
-		//control.setBorder(BorderFactory.createLineBorder(Color.black));
-		//
-		loadControlBtn = new JButton("Load Control Timecourse...");
-		loadControlBtn.addActionListener(this);
-		control.add(loadControlBtn);
-		controlFileLbl = new JLabel("Control Timecourse File: None Loaded");
-		control.add(controlFileLbl);
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 2;
-		//c.fill = GridBagConstraints.HORIZONTAL;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		masterPanel.add(control, c);
-		
-		JPanel overlayPnl = new JPanel();
-		overlayPnl.setLayout(new FlowLayout());
-		//overlayPnl.setBorder(BorderFactory.createLineBorder(Color.black));
-		JLabel overlayLbl = new JLabel("Region Display Options: ");
-		overlayPnl.add(overlayLbl);
-		String[] overlayOptions = {SHOW_ACTIVE_FOR_SELECTED, 
-				SHOW_ALL_FOR_SELECTED, SHOW_ACTIVE_FOR_ALL, SHOW_ALL_FOR_ALL};
-		overlayCbx = new JComboBox(overlayOptions);
-		overlayPnl.add(overlayCbx);
-		
-		JLabel plotOptsLbl = new JLabel("Plot Options: ");
-		overlayPnl.add(plotOptsLbl);
-		String[] plotOptions = {PLOT_MEAN, PLOT_STANDARD_DEVIATION};
-		JComboBox plotOptionsCbx = new JComboBox(plotOptions);
-		overlayPnl.add(plotOptionsCbx);
-		
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 3;
-		c.gridwidth = 4;
-		//c.fill = GridBagConstraints.HORIZONTAL;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		masterPanel.add(overlayPnl, c);
-			
-		JPanel savedCells = new JPanel();
-		savedCells.setLayout(new GridBagLayout());
-		//savedCells.setBorder(BorderFactory.createLineBorder(Color.black));
-		//
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 0;
-		c.anchor = GridBagConstraints.FIRST_LINE_END;
-		JLabel stLabel = new JLabel("Saved Track: ");
-		savedCells.add(stLabel, c);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 1;
-		c.gridy = 0;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		String[] emptyList = {"(none saved)"};
-		this.savedCellCbx = new JComboBox(emptyList);
-		this.savedCellCbx.addActionListener(this);
-		savedCells.add(this.savedCellCbx, c);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 1;
-		c.anchor = GridBagConstraints.FIRST_LINE_END;
-		JLabel kfLabel = new JLabel("Keyframes: ");
-		savedCells.add(kfLabel, c);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 1;
-		c.gridy = 1;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		this.keyframeLst = new JList();
-		JScrollPane scrollpane = new JScrollPane(this.keyframeLst); 
-		savedCells.add(scrollpane, c);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 2;
-		c.gridy = 0;
-		c.gridheight = 2;
-		JPanel addDeleteButtons = new JPanel(new GridLayout(6,1));
-		addNewTrack = new JButton("Add New Track");
-		addNewTrack.addActionListener(this);
-		addDeleteButtons.add(addNewTrack);
-	
-		// For Jeremie 11/11/11
-		addTrackWithLast = new JButton("Add Track With Last");
-		addTrackWithLast.addActionListener(this);
-		addDeleteButtons.add(addTrackWithLast);
-		
-		addKeyframe = new JButton("Add Keyframe");
-		addKeyframe.addActionListener(this);
-		addKeyframe.addKeyListener(this);
-		addDeleteButtons.add(addKeyframe);
-		//
-		JPanel mompLast = new JPanel(new GridLayout(1,2));
-		mompChk = new JCheckBox("MOMP");
-		mompLast.add(mompChk);
-		lastChk = new JCheckBox("Last");
-		mompLast.add(lastChk);
-		addDeleteButtons.add(mompLast);
-		//
-		deleteTrackBtn = new JButton("Delete Track");
-		deleteTrackBtn.addActionListener(this);
-		addDeleteButtons.add(deleteTrackBtn);
-		deleteKeyframeBtn = new JButton("Delete Keyframe");
-		deleteKeyframeBtn.addActionListener(this);
-		addDeleteButtons.add(deleteKeyframeBtn);
-		clearAllTimecourses = new JButton("Clear Tracks");
-		clearAllTimecourses.addActionListener(this);
-		addDeleteButtons.add(clearAllTimecourses);
-		savedCells.add(addDeleteButtons, c);
-		//
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 4;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		masterPanel.add(savedCells, c);
-		//super.add(savedCells);
-
-		JPanel savePanel = new JPanel(new GridLayout(5,1));
-		//savePanel.setBorder(BorderFactory.createLineBorder(Color.black));
-		allTimecourse = new JButton("Get All Timecourses");
-		allTimecourse.addActionListener(this);
-		savePanel.add(allTimecourse);
-		showFrameNumber = new JButton("Show Frame Numbers");
-		showFrameNumber.addActionListener(this);
-		savePanel.add(showFrameNumber);
-		saveTracksBtn = new JButton("Save Tracks...");
-		saveTracksBtn.addActionListener(this);
-		savePanel.add(saveTracksBtn);
-		loadTracksBtn = new JButton("Load Tracks...");
-		loadTracksBtn.addActionListener(this);
-		savePanel.add(loadTracksBtn);		
-		filenameLbl =	new JLabel("Tracks File: None Loaded");		// GET RID OF THIS AND USE A FILE CHOOSER
-		savePanel.add(filenameLbl);
-		//this.text.setText("enter filename here");
-		//
-		c = new GridBagConstraints();
-		c.gridx = 1;
-		c.gridy = 4;
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		c.fill = GridBagConstraints.BOTH;
-		masterPanel.add(savePanel, c);
-		//super.add(savePanel);
-
-		/* TODO: Should probably get rid of this, but it seems to have made
-		 * the layout display correctly!!!
-		 */
-		//JPanel testPanel = new JPanel(new FlowLayout());
-		//Component comp = (Component) new ImageCanvas(new ImagePlus("/Users/johnbachman/Desktop/12Ratio.jpg"));
-		//masterPanel.add(testPanel);
-		/* end section to get rid of */
-		
-		//super.add(masterPanel);
-		super.add(masterPanel);
-		
-		/*
-		Panel labels = new Panel();
-		labels.setLayout(new GridLayout(1,2));
-		JLabel regionLbl = new JLabel("Region: ");
-		JLabel frameLbl = new JLabel("Frame: ");
-		labels.add(regionLbl);
-		labels.add(frameLbl);
-		super.add(labels);
-		*/
-		super.pack();
-		super.setResizable(true);
-		GUI.center(this);
-		super.show();
-	}
-
-	/**
-	 * Sets the value image (the image from which we are extracting timecourse
-	 * information and intensity values) and updates related class variables
-	 * accordingly.
-	 * 
-	 * @param valueImg The ImagePlus object from which to extract intensity values.
-	 */
-	void setValueImage(ImagePlus valueImg) {
-		this.valueImg = valueImg;
-		//this.valueImgOverlay = new CustomCanvas(valueImg);
-		//this.valueImg
-		this.numPoints = valueImg.getStack().getSize();
-		this.cellTracks.setValueImageForTracks(valueImg);
-		
-		if (this.controlTimecourse == null) {
-			this.controlTimecourse = new double[this.numPoints];
-		}
-		else if (this.controlTimecourse.length != this.numPoints) {
-			log("setValueImage: Error! The newly set timecourse image has a");
-			log("  different number of points than the loaded control file.");
-			log("  Resetting the control timecourse to 0.");
-			this.controlTimecourse = new double[this.numPoints];
-		}
-			
-	}
-	
-	/**
-	 * Sets the ROI image (the image to get the regions of interest from).
-	 * 
-	 * @param roiImg The ImagePlus object from which to get the ROIs.
-	 */
-	void setRoiImage(ImagePlus roiImg) {
-		this.roiImg = roiImg;
-	}
-	
-	/**
-	 * Shows the image selection dialog box. Sets TheImage to be the selected
-	 * image.
-	 * 
-	 * @return False if the user canceled the selection, true otherwise.
-	 */
-	/*
-	public boolean showDialog(String[] titles, int[] wList) {
-		GenericDialog gd = new GenericDialog("Select Image");
-		gd.addChoice("Image1 (or Stack1):", titles, titles[0]);
-		gd.showDialog();
-		if (gd.wasCanceled())
-			return false;
-
-		int i1Index = gd.getNextChoiceIndex();
-		this.setValueImage(WindowManager.getImage(wList[i1Index]));
-
-		return true;
-	}
-*/
-	
 	/**
 	 * The main run loop, refreshes the trajectory plot every 200ms.
 	 */
 	public void run() {
-		//while (!done) {
-		//	try {
-		//		Thread.sleep(REFRESH_INTERVAL);
-		//	} catch (InterruptedException e) {
-		//	}
-			//showPlot();
-		//	logloop("Logging");
-		//}
+		while (!done) {
+			try {
+				logloop("me2 run method");
+				showPlot();
+				Thread.sleep(REFRESH_INTERVAL);
+			} catch (InterruptedException e) {
+				log("InterruptedException in run method!");
+				log(e.toString());
+			}
+			catch (Exception e) {
+				log("Exception in run method!");
+				log(e.toString());
+			}
+		}
 	}
 	
 	/**
@@ -552,53 +213,60 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	 * method has to be synchronized because the "Get Timecourses" function tries
 	 * to read the ValueList while showPlot may be trying to update it.
 	 */
-//	public synchronized void showPlot() {
-//		try {
-//			// The ImageProcessor for the MovieExplorer
-//			ImageProcessor myImageProcessor = super.imp.getProcessor();
-//	
-//			if (myImageProcessor == null) {
-//				shutDown();
-//				return;
-//			}
-//	
-//			//ValueList = new double[numPoints]; 				
-//			//ValueListNorm = new double[numPoints];
-//			TheCurrentSlice  = this.roiImg.getCurrentSlice();
-//			logloop("showPlot: CurrentSlice " + TheCurrentSlice);
-//			//Rectangle roi = roiImg.getStack().getRoi();
-//		  Roi roi = roiImg.getRoi(); // will be null if no roi set
-// 	
-//		  logloop("About to test if valueimg is roiImg");
-//			if (!valueImg.equals(roiImg)) {
-//				logloop("Setting Roi on roiImg");
-//				valueImg.setRoi(roi); 
-//			}
-//
-//			logloop("About to create the temp track");
-//			// Create the temporary track
-//			TempCellTrack tempTrack = new TempCellTrack(new Keyframe(1, roi), this.valueImg);
-//			
-//			drawPlot(myImageProcessor, tempTrack);
-//			logloop("showPlot: returned from drawPlot");
-//			//super.imp.setTitle(this.title); // Why do this every iteration?
-//	
-//			//this.valueImgOverlay.repaint();
-//			//log("showPlot: returned from overlay.repaint");
-//			//valueImg.updateAndDraw(); ---
-//	
-//			this.updateOverlay();
-//			
-//			// Updates the image from the data in the ImageProcessor
-//			imp.updateAndDraw();
-//			
-//		}
-//		catch (Exception ex) {
-//			log("showPlot exception:");
-//			log(ex.getMessage());
-//			log(ex.toString());
-//		}
-//	}
+	public synchronized void showPlot() {
+		try {
+			if (tcp == null) {
+				log("tcp is null");
+				shutDown();
+				return;
+			}
+			
+			// The ImageProcessor for the Timecourse Plotter
+			ImageProcessor myImageProcessor = tcp.getImageProcessor();
+
+			if (myImageProcessor == null) {
+				log("myImageProcessor is null");
+				shutDown();
+				return;
+			}
+	
+			//ValueList = new double[numPoints]; 				
+			//ValueListNorm = new double[numPoints];
+			TheCurrentSlice  = this.roiImg.getCurrentSlice();
+			logloop("showPlot: CurrentSlice " + TheCurrentSlice);
+			//Rectangle roi = roiImg.getStack().getRoi();
+		  Roi roi = roiImg.getRoi(); // will be null if no roi set
+ 	
+		  logloop("About to test if valueimg is roiImg");
+			if (!valueImg.equals(roiImg)) {
+				logloop("Setting Roi on roiImg");
+				valueImg.setRoi(roi); 
+			}
+
+			logloop("About to create the temp track");
+			// Create the temporary track
+			TempCellTrack tempTrack = new TempCellTrack(new Keyframe(1, roi), this.valueImg);
+			
+			drawPlot(myImageProcessor, tempTrack);
+			logloop("showPlot: returned from drawPlot");
+			//super.imp.setTitle(this.title); // Why do this every iteration?
+	
+			//this.valueImgOverlay.repaint();
+			//log("showPlot: returned from overlay.repaint");
+			//valueImg.updateAndDraw(); ---
+	
+			this.updateOverlay();
+			
+			// Updates the image from the data in the ImageProcessor
+			tcp.getImagePlus().updateAndDraw();
+
+		}
+		catch (Exception ex) {
+			log("showPlot exception:");
+			log(ex.getMessage());
+			log(ex.toString());
+		}
+	}
 
 	/**
 	 * Clears the plotting window and calls drawCurves and drawText.
@@ -988,21 +656,348 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		//log("drawText: returned from maxValue");
 	}
 
+	
+	/**
+	 * Gets the open images and returns it as an array of ImagePlusWrapper
+	 * objects.
+	 */
+	private ImagePlusWrapper[] getOpenImages() {
+		int[] wList;
+		wList = WindowManager.getIDList();
+		if (wList == null || wList.length < 1) {
+			IJ.showMessage("You need at least one image open...");
+			return null;
+		}
+		// Store the image objects and titles for the open images
+		//String[] titles = new String[wList.length];
+		ImagePlusWrapper[] openImages = new ImagePlusWrapper[wList.length];
+		for (int i = 0; i < wList.length; i++) {
+			ImagePlusWrapper tempImg = new ImagePlusWrapper(WindowManager.getImage(wList[i]));
+			/*
+			if (tempImg != null)
+				titles[i] = tempImg.getTitle();
+			else
+				titles[i] = "(null)";
+			*/
+			openImages[i] = tempImg;
+		}
+		return openImages;
+	}
+	
+	/**
+	 * Sets up the GUI.
+	 */
+	public void setup() {
+
+		if (IJ.versionLessThan("1.27w"))
+			return;
+
+		//FrameNumberList = new ArrayList();
+
+		// Get the list of open images		
+		ImagePlusWrapper[] openImages = getOpenImages();
+		this.setValueImage(openImages[0].getImage());
+		this.setRoiImage(openImages[0].getImage());
+		
+		if (this.valueImg == null) {
+			IJ.showMessage(this.title, "Out of memory");
+			return;
+		}
+		
+		fc = new JFileChooser();
+		
+		JPanel masterPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints c; // to be used for all GridBag constraints
+		
+		JPanel chooser = new JPanel();
+		//chooser.setBorder(BorderFactory.createLineBorder(Color.black));
+		chooser.setLayout(new FlowLayout());
+		this.roiImageCbx = new JComboBox(openImages);
+		this.valueImageCbx = new JComboBox(openImages);
+		this.roiImageCbx.addActionListener(this);
+		this.valueImageCbx.addActionListener(this);
+		JLabel roiChooserLbl = new JLabel("Region Image: ");
+		JLabel valueChooserLbl = new JLabel("Timecourse Image: ");
+		chooser.add(valueChooserLbl);
+		chooser.add(valueImageCbx);
+		chooser.add(roiChooserLbl);
+		chooser.add(roiImageCbx);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridwidth = 2;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		masterPanel.add(chooser, c);		
+		//super.add(chooser);
+
+		JPanel options = new JPanel();
+		//options.setLayout(new GridLayout(1,5));
+		options.setLayout(new FlowLayout());
+		//options.setBorder(BorderFactory.createLineBorder(Color.black));
+		//
+		updateImgListBtn = new JButton("Update Image Lists");
+		updateImgListBtn.addActionListener(this);
+		options.add(updateImgListBtn);
+		//
+		String[] plotTypes = {PLOT_CURRENT_ROI,
+				PLOT_SELECTED_TRACK,
+				PLOT_SELECTED_CONTROL_SUBTRACTED,
+				PLOT_ALL_TRACKS,
+				PLOT_ALL_TRACKS_NORMALIZED_MIN,
+				PLOT_ALL_TRACKS_NORMALIZED,
+				PLOT_ALL_CONTROL_SUBTRACTED};
+		plotTypeCbx = new JComboBox(plotTypes);
+		plotTypeCbx.setSelectedItem(PLOT_CURRENT_ROI);
+		options.add(plotTypeCbx);
+		//
+		DrawLinesCheckBox = new JCheckBox("Draw Lines");
+		DrawLinesCheckBox.setSelected(true);
+		options.add(DrawLinesCheckBox);
+		//
+		DrawPointsCheckBox = new JCheckBox("Draw Points");
+		DrawPointsCheckBox.setSelected(true);
+		options.add(DrawPointsCheckBox);
+		//
+		LowPassFilterCheckBox = new JCheckBox("Low-Pass Filter");
+		LowPassFilterCheckBox.setSelected(false);
+		options.add(LowPassFilterCheckBox);
+		//
+		//showActiveRegionChk.setSelected(false);
+		//options.add(showActiveRegionChk);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 1;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		masterPanel.add(options, c);
+	
+		JPanel control = new JPanel();
+		//options.setLayout(new GridLayout(1,5));
+		control.setLayout(new FlowLayout());
+		//control.setBorder(BorderFactory.createLineBorder(Color.black));
+		//
+		loadControlBtn = new JButton("Load Control Timecourse...");
+		loadControlBtn.addActionListener(this);
+		control.add(loadControlBtn);
+		controlFileLbl = new JLabel("Control Timecourse File: None Loaded");
+		control.add(controlFileLbl);
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 2;
+		//c.fill = GridBagConstraints.HORIZONTAL;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		masterPanel.add(control, c);
+		
+		JPanel overlayPnl = new JPanel();
+		overlayPnl.setLayout(new FlowLayout());
+		//overlayPnl.setBorder(BorderFactory.createLineBorder(Color.black));
+		JLabel overlayLbl = new JLabel("Region Display Options: ");
+		overlayPnl.add(overlayLbl);
+		String[] overlayOptions = {SHOW_ACTIVE_FOR_SELECTED, 
+				SHOW_ALL_FOR_SELECTED, SHOW_ACTIVE_FOR_ALL, SHOW_ALL_FOR_ALL};
+		overlayCbx = new JComboBox(overlayOptions);
+		overlayPnl.add(overlayCbx);
+		
+		JLabel plotOptsLbl = new JLabel("Plot Options: ");
+		overlayPnl.add(plotOptsLbl);
+		String[] plotOptions = {PLOT_MEAN, PLOT_STANDARD_DEVIATION};
+		JComboBox plotOptionsCbx = new JComboBox(plotOptions);
+		overlayPnl.add(plotOptionsCbx);
+		
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 3;
+		c.gridwidth = 4;
+		//c.fill = GridBagConstraints.HORIZONTAL;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		masterPanel.add(overlayPnl, c);
+			
+		JPanel savedCells = new JPanel();
+		savedCells.setLayout(new GridBagLayout());
+		//savedCells.setBorder(BorderFactory.createLineBorder(Color.black));
+		//
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 0;
+		c.anchor = GridBagConstraints.FIRST_LINE_END;
+		JLabel stLabel = new JLabel("Saved Track: ");
+		savedCells.add(stLabel, c);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = 0;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		String[] emptyList = {"(none saved)"};
+		this.savedCellCbx = new JComboBox(emptyList);
+		this.savedCellCbx.addActionListener(this);
+		savedCells.add(this.savedCellCbx, c);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 1;
+		c.anchor = GridBagConstraints.FIRST_LINE_END;
+		JLabel kfLabel = new JLabel("Keyframes: ");
+		savedCells.add(kfLabel, c);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = 1;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		this.keyframeLst = new JList();
+		JScrollPane scrollpane = new JScrollPane(this.keyframeLst); 
+		savedCells.add(scrollpane, c);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 2;
+		c.gridy = 0;
+		c.gridheight = 2;
+		JPanel addDeleteButtons = new JPanel(new GridLayout(6,1));
+		addNewTrack = new JButton("Add New Track");
+		addNewTrack.addActionListener(this);
+		addDeleteButtons.add(addNewTrack);
+	
+		// For Jeremie 11/11/11
+		addTrackWithLast = new JButton("Add Track With Last");
+		addTrackWithLast.addActionListener(this);
+		addDeleteButtons.add(addTrackWithLast);
+		
+		addKeyframe = new JButton("Add Keyframe");
+		addKeyframe.addActionListener(this);
+		addKeyframe.addKeyListener(this);
+		addDeleteButtons.add(addKeyframe);
+		//
+		JPanel mompLast = new JPanel(new GridLayout(1,2));
+		mompChk = new JCheckBox("MOMP");
+		mompLast.add(mompChk);
+		lastChk = new JCheckBox("Last");
+		mompLast.add(lastChk);
+		addDeleteButtons.add(mompLast);
+		//
+		deleteTrackBtn = new JButton("Delete Track");
+		deleteTrackBtn.addActionListener(this);
+		addDeleteButtons.add(deleteTrackBtn);
+		deleteKeyframeBtn = new JButton("Delete Keyframe");
+		deleteKeyframeBtn.addActionListener(this);
+		addDeleteButtons.add(deleteKeyframeBtn);
+		clearAllTimecourses = new JButton("Clear Tracks");
+		clearAllTimecourses.addActionListener(this);
+		addDeleteButtons.add(clearAllTimecourses);
+		savedCells.add(addDeleteButtons, c);
+		//
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 4;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		masterPanel.add(savedCells, c);
+		//super.add(savedCells);
+
+		JPanel savePanel = new JPanel(new GridLayout(5,1));
+		//savePanel.setBorder(BorderFactory.createLineBorder(Color.black));
+		allTimecourse = new JButton("Get All Timecourses");
+		allTimecourse.addActionListener(this);
+		savePanel.add(allTimecourse);
+		showFrameNumber = new JButton("Show Frame Numbers");
+		showFrameNumber.addActionListener(this);
+		savePanel.add(showFrameNumber);
+		saveTracksBtn = new JButton("Save Tracks...");
+		saveTracksBtn.addActionListener(this);
+		savePanel.add(saveTracksBtn);
+		loadTracksBtn = new JButton("Load Tracks...");
+		loadTracksBtn.addActionListener(this);
+		savePanel.add(loadTracksBtn);		
+		filenameLbl =	new JLabel("Tracks File: None Loaded");		// GET RID OF THIS AND USE A FILE CHOOSER
+		savePanel.add(filenameLbl);
+		//this.text.setText("enter filename here");
+		//
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = 4;
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.fill = GridBagConstraints.BOTH;
+		masterPanel.add(savePanel, c);
+		//super.add(savePanel);
+
+		/* TODO: Should probably get rid of this, but it seems to have made
+		 * the layout display correctly!!!
+		 */
+		//JPanel testPanel = new JPanel(new FlowLayout());
+		//Component comp = (Component) new ImageCanvas(new ImagePlus("/Users/johnbachman/Desktop/12Ratio.jpg"));
+		//masterPanel.add(testPanel);
+		/* end section to get rid of */
+		
+		//super.add(masterPanel);
+		super.add(masterPanel);
+		
+		/*
+		Panel labels = new Panel();
+		labels.setLayout(new GridLayout(1,2));
+		JLabel regionLbl = new JLabel("Region: ");
+		JLabel frameLbl = new JLabel("Frame: ");
+		labels.add(regionLbl);
+		labels.add(frameLbl);
+		super.add(labels);
+		*/
+		super.pack();
+		super.setResizable(true);
+		GUI.center(this);
+		super.show();
+	}
+
+	/**
+	 * Sets the value image (the image from which we are extracting timecourse
+	 * information and intensity values) and updates related class variables
+	 * accordingly.
+	 * 
+	 * @param valueImg The ImagePlus object from which to extract intensity values.
+	 */
+	void setValueImage(ImagePlus valueImg) {
+		this.valueImg = valueImg;
+		//this.valueImgOverlay = new CustomCanvas(valueImg);
+		//this.valueImg
+		this.numPoints = valueImg.getStack().getSize();
+		this.cellTracks.setValueImageForTracks(valueImg);
+		
+		if (this.controlTimecourse == null) {
+			this.controlTimecourse = new double[this.numPoints];
+		}
+		else if (this.controlTimecourse.length != this.numPoints) {
+			log("setValueImage: Error! The newly set timecourse image has a");
+			log("  different number of points than the loaded control file.");
+			log("  Resetting the control timecourse to 0.");
+			this.controlTimecourse = new double[this.numPoints];
+		}
+			
+	}
+	
+	/**
+	 * Sets the ROI image (the image to get the regions of interest from).
+	 * 
+	 * @param roiImg The ImagePlus object from which to get the ROIs.
+	 */
+	void setRoiImage(ImagePlus roiImg) {
+		this.roiImg = roiImg;
+	}
+	
 	/** 
 	 * Overrides the method in the ImageWindow parent class, adding
-	 * a call to shutDown() to terminate the run loop.
+	 * a call to close down the TimecoursePlotter.
 	 */
 	public void windowClosing(WindowEvent e) {
 		super.windowClosing(e);
 		this.tcp.windowClosing(e);
 	}
+	
 	/**
 	 * Sets a boolean flag, done, which allows the run() loop to terminate.
 	 */
 	public void shutDown() {
 		done = true;
 	}
-	
+
 	String d2s(double d) {
 		if ((int) d == d)
 			return IJ.d2s(d, 0);
@@ -1587,7 +1582,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		}
 	}
 	
-	
 	public void lostOwnership(Clipboard clipboard, Transferable contents) {
 	}
 
@@ -1647,8 +1641,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		}
 	} // Custom Canvas
 
-
-	
 	// These next three methods are probably implemented elsewhere and could
 	// rewritten to use standard utility methods
 	public Color getColor(double val) {

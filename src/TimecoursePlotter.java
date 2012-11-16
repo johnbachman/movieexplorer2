@@ -1,11 +1,17 @@
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
+import java.util.Set;
 
 import ij.gui.ImageWindow;
 import ij.*;
 import ij.gui.ImageWindow;
 import ij.gui.NewImage;
+import ij.gui.Roi;
+import ij.process.ImageProcessor;
 
-public class TimecoursePlotter extends ImageWindow implements Runnable {
+public class TimecoursePlotter extends ImageWindow {
 	static final int WIN_WIDTH = 800;
 	static final int WIN_HEIGHT = 240;
 	static final int PLOT_WIDTH = 740;
@@ -31,29 +37,15 @@ public class TimecoursePlotter extends ImageWindow implements Runnable {
 
 	public TimecoursePlotter(Movie_Explorer_2 me2) {
 		// Call the constructor for ImageWindow
-		super(NewImage.createRGBImage("TimecoursePlotter2", WIN_WIDTH, WIN_HEIGHT, 1,
+		super(NewImage.createRGBImage("Timecourse Plotter", WIN_WIDTH, WIN_HEIGHT, 1,
 		  		NewImage.FILL_WHITE));
 
 		this.me2 = me2;
 
-		thread = new Thread(this, "TimecoursePlotter2");		
-		thread.start();		// Start running showPlot()
+		//thread = new Thread(this, "TimecoursePlotter2");		
+		//thread.start();		// Start running showPlot()
 	}
-	
-	/**
-	 * The main run loop, refreshes the trajectory plot every 200ms.
-	 */
-	public void run() {
-		while (!done) {
-			try {
-				Thread.sleep(REFRESH_INTERVAL);
-			} catch (InterruptedException e) {
-			}
-			//showPlot();
-			logloop("Logging");
-		}
-	}
-	
+		
 	/** 
 	 * Overrides the method in the ImageWindow parent class, adding
 	 * a call to shutDown() to terminate the run loop.
@@ -61,8 +53,23 @@ public class TimecoursePlotter extends ImageWindow implements Runnable {
 	public void windowClosing(WindowEvent e) {
 		super.windowClosing(e);
 		shutDown();
+		me2.windowClosing(e);
 	}
 
+	/**
+	 * Reruns the ImageProcessor for the TimecoursePlotter.
+	 */
+	public ImageProcessor getImageProcessor() {
+		return super.imp.getProcessor();
+	}
+
+	/**
+	 * Returns the ImagePlus for the TimecoursePlotter
+	 */
+	public ImagePlus getImagePlus() {
+		return super.imp;
+	}
+	
 	/**
 	 * Sets a boolean flag, done, which allows the run() loop to terminate.
 	 */
