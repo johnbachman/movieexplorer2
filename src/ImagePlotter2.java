@@ -69,38 +69,6 @@ import au.com.bytecode.opencsv.CSVReader;
  */
 class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		KeyListener, FocusListener, ClipboardOwner, Runnable {
-	
-	// -- JOHN A'S LEFTOVER GLOBAL VARIABLES NOT USED IN THE CODE --
-	//protected TextField threshold1TF, threshold2TF, subtractedSlopeTF; // Can't see this one!
-	//protected Label threshold1Label, threshold2Label, subtractedSlopeLabel; // Or this one
-	//private GridBagLayout grid;
-	//private GridBagConstraints c;
-	//protected Label value, count, cfpImageLabel, yfpImageLabel, ratioMethodLabel;
-	//protected static String defaultDirectory = null;
-	//protected int decimalPlaces;
-	//protected int digits;
-	//protected Calibration cal;
-	//public int numBins;
-	//protected boolean isDead;
-	//protected double[] valuesToPlot;
-	//protected int threshold1Frame;
-	//protected int ratio50Frame;
-	//protected int threshold2Frame;
-	//protected int threshold1;
-	//protected int threshold2;
-	//protected double subtractedSlope;
-	//protected double slope50;
-	//protected double[][] ratioListBlock;
-	//protected int blockIndex = 0;
-	// protected final int blockSize = 100;
-	// protected double BlockMinVal = 1000000;
-	// protected double BlockMaxVal = -100000;
-	//protected double[] ValueList;
-	//protected double MaxValue;
-	//protected double MinValue;
-	//protected double[] ValueListNorm;	
-	//protected List<CellTrack> cellTracks = new ArrayList<CellTrack>();	
-	//CustomCanvas valueImgOverlay;
 
 
 	/** The width from one timepoint to the next in the plot, measured in pixels */
@@ -145,10 +113,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	
 	// GUI Components
 	protected Rectangle frame = null;
-	protected JButton addNewTrack, addKeyframe, allTimecourse, clearAllTimecourses,
-			showFrameNumber;
-	// Just for Jeremie
-	protected JButton addTrackWithLast;
+	protected JButton addNewTrack, addKeyframe, allTimecourse, clearAllTimecourses, showFrameNumber;
+	protected JButton addTrackWithLast; 	// Just for Jeremie
 	protected JCheckBox DrawLinesCheckBox; 
 	protected JCheckBox DrawPointsCheckBox;
 	protected JCheckBox PlotAllTimecoursesCheckBox;
@@ -177,11 +143,9 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 
 	/** The image that we're getting the trajectories from */
 	private ImagePlus valueImg;
-	/** A custom class that draws boxes in the reference image over the saved
-  regions */
 	/** The image that we're getting the ROIs from */
 	private ImagePlus roiImg;
-		/** The number of slices in the image stack (i.e., timepoints) */
+	/** The number of slices in the image stack (i.e., timepoints) */
 	protected int numPoints;
 	/** Keeps track of which "slice" in the stack we're looking at, i.e. which timepoint */
 	int TheCurrentSlice = -1;
@@ -189,8 +153,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	/** The control timecourse to be subtracted from the trajectories in the image. */
 	protected double[] controlTimecourse;
 	
-	//JTextField text = new JTextField();
-	//JCheckBox showActiveRegionChk = new JCheckBox("Show active region");
 	JCheckBox mompChk;
 	JCheckBox lastChk;
 	protected CellTrackList cellTracks = new CellTrackList();
@@ -216,7 +178,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		thread.start();		// Start running showPlot()
 	}
 
-	
 	/**
 	 * Gets the open images and returns it as an array of ImagePlusWrapper
 	 * objects.
@@ -539,7 +500,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		this.roiImg = roiImg;
 	}
 	
-	
 	/**
 	 * Shows the image selection dialog box. Sets TheImage to be the selected
 	 * image.
@@ -627,7 +587,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	}
 
-
 	/**
 	 * Clears the plotting window and calls drawCurves and drawText.
 	 */
@@ -667,7 +626,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	}
 
-	/** Draws the trajectory and saves the pixel data  for the trajectory
+	/**
+	 * Draws the trajectory and saves the pixel data  for the trajectory
 	 * in the ImageProcessor object.
 	 */
 	void drawCurves(ImageProcessor ip, TempCellTrack tempTrack) {
@@ -1031,7 +991,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		done = true;
 	}
 
-	
 	String d2s(double d) {
 		if ((int) d == d)
 			return IJ.d2s(d, 0);
@@ -1042,7 +1001,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 	int getWidth(double d, ImageProcessor ip) {
 		return ip.getStringWidth(d2s(d));
 	}
-
 	
 	void showFrameNumberList() {
 		StringBuffer sb = new StringBuffer();
@@ -1190,7 +1148,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		//FrameNumberList.add(new Integer(TheCurrentSlice));
 	}
 
-	
 	/**
 	 * Adds the current timecourse to the list of saved timecourses, while
 	 * also adding a Keyframe marked as the last frame of the trajectory.
@@ -1233,7 +1190,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		this.updateOverlay();		
 	}
 
-	
 	void addKeyframe() {
 		log("In addKeyframe. Current track: " + this.currentTrack);
 		//Rectangle roi = this.roiImg.getStack().getRoi();
@@ -1334,7 +1290,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	}
 
-	
 	public void keyPressed(KeyEvent e) {
 		// TODO Auto-generated method stub		
 	}
@@ -1350,7 +1305,6 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	}
 
-	
 	/**
 	 * Updates the overlay on the value and Roi images, using the current track.
 	 * Checks to see if we should show the ROIs for all keyframes or only the
@@ -1621,71 +1575,10 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	}
 	
-	/*
-	public void focusGained(FocusEvent e) {
-		Component c = e.getComponent();
-		if (c instanceof TextField)
-			((TextField) c).selectAll();
-	}
-
-	public void focusLost(FocusEvent e) {
-		Component c = e.getComponent();
-		if (c instanceof TextField) {
-			handleText((TextField) c);
-		}
-	}
-  */
-	
-	/*
-	protected void handleText(TextField b) {
-		if (b == threshold1TF) {
-			threshold1 = readNumber(threshold1TF);
-			threshold1TF.setText(Integer.toString(threshold1));
-			showPlot();
-		} else if (b == threshold2TF) {
-			threshold2 = readNumber(threshold2TF);
-			threshold2TF.setText(Integer.toString(threshold2));
-			showPlot();
-		} else if (b == subtractedSlopeTF) {
-			subtractedSlope = readDouble(subtractedSlopeTF);
-			subtractedSlopeTF.setText(d2s(subtractedSlope));
-			showPlot();
-		}
-	}
-
-	public int readNumber(TextField tf) {
-		String s = tf.getText();
-		int result;
-		try {
-			Integer Int = new Integer(s.trim());
-			result = Int.intValue();
-		} catch (NumberFormatException e) {
-			result = -1;
-		}
-		return result;
-	}
-
-	public double readDouble(TextField tf) {
-		String s = tf.getText();
-		double result;
-		try {
-			Double d = new Double(s.trim());
-			result = d.doubleValue();
-		} catch (NumberFormatException e) {
-			result = -1;
-		}
-		return result;
-	}
-  */
 	
 	public void lostOwnership(Clipboard clipboard, Transferable contents) {
 	}
 
-	/**
-	 * 
-	 * @author johnbachman
-	 *
-	 */
 	class CustomCanvas extends ImageCanvas {
 		public static final long serialVersionUID = 1;
 		
@@ -1707,15 +1600,7 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 			dead = new boolean[number];
 			index = 0;
 		}
-/*
-		@Override
-		public void update(Graphics g) {
-			log("CustomCanvas.update: About to call super.update()");
-			//super.update(g);
-			drawOverlay(g);
-			log("CustomCanvas.update: returned from drawOverlay");
-		}
-*/
+
 		@Override
 		public void paint(Graphics g) {
 			log("CustomCanvas.paint");
@@ -1724,8 +1609,8 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 
 			log("CustomCanvas.paint!");
 		}
-
-		public void addPosition(int x, int y, int h, int w)// , boolean d)
+		
+ 		public void addPosition(int x, int y, int h, int w)// , boolean d)
 		{
 			log("CustomCanvas.addPosition");
 			xPosition[index] = x;
@@ -1750,50 +1635,7 @@ class ImagePlotter2 extends ImageWindow implements Measurements, ActionListener,
 		}
 	} // Custom Canvas
 
-	/*
-	// Don't know what these methods are for!
-	ImagePlus duplicateImage(ImagePlus img1) {
-		ImageStack stack1 = img1.getStack();
-		int width = stack1.getWidth();
-		int height = stack1.getHeight();
-		int n = stack1.getSize();
-		ImageStack stack2 = img1.createEmptyStack();
-		try {
-			for (int i = 1; i <= n; i++) {
-				ImageProcessor ip1 = stack1.getProcessor(i);
-				ImageProcessor ip2 = ip1.duplicate();
-				ip2 = ip2.convertToFloat();
-				stack2.addSlice(stack1.getSliceLabel(i), ip2);
-			}
-		} catch (OutOfMemoryError e) {
-			stack2.trim();
-			stack2 = null;
-			return null;
-		}
-		ImagePlus img2 = new ImagePlus("Ratio", stack2);
-		return img2;
-	}
 
-	ImagePlus replicateImage(ImagePlus img1, int n) {
-		ImageProcessor ip1 = img1.getProcessor();
-		int width = ip1.getWidth();
-		int height = ip1.getHeight();
-		ImageStack stack2 = img1.createEmptyStack();
-		try {
-			for (int i = 1; i <= n; i++) {
-				ImageProcessor ip2 = ip1.duplicate();
-				ip2 = ip2.convertToFloat();
-				stack2.addSlice(null, ip2);
-			}
-		} catch (OutOfMemoryError e) {
-			stack2.trim();
-			stack2 = null;
-			return null;
-		}
-		ImagePlus img2 = new ImagePlus("Ratio", stack2);
-		return img2;
-	}
-  */
 	
 	// These next three methods are probably implemented elsewhere and could
 	// rewritten to use standard utility methods
