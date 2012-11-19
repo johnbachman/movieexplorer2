@@ -344,7 +344,9 @@ public class CellTrack extends AbstractListModel {
 				*/
 			//} // end check of roi
 
-			double value = stats.stdDev;
+			//double value = stats.stdDev;
+			double value = stats.mean;
+			
 			//value = standard_deviation;
 			
 			if (value < 0) {
