@@ -1585,61 +1585,61 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	public void lostOwnership(Clipboard clipboard, Transferable contents) {
 	}
 
-	class CustomCanvas extends ImageCanvas {
-		public static final long serialVersionUID = 1;
-		
-		int[] xPosition;
-		int[] yPosition;
-		int[] height;
-		int[] width;
-		boolean[] dead;
-		static final int number = 200;
-		int index;
-
-		CustomCanvas(ImagePlus imp) {
-			super(imp);
-			log("CustomCanvas constructor: imp = " + imp);
-			xPosition = new int[number];
-			yPosition = new int[number];
-			height = new int[number];
-			width = new int[number];
-			dead = new boolean[number];
-			index = 0;
-		}
-
-		@Override
-		public void paint(Graphics g) {
-			log("CustomCanvas.paint");
-			super.paint(g);
-			drawOverlay(g);
-
-			log("CustomCanvas.paint!");
-		}
-		
- 		public void addPosition(int x, int y, int h, int w)// , boolean d)
-		{
-			log("CustomCanvas.addPosition");
-			xPosition[index] = x;
-			yPosition[index] = y;
-			height[index] = h;
-			width[index] = w;
-			// dead[index]=d;
-			index++;
-			log("CustomCanvas.addPosition: about to call repaint()");
-			repaint();
-			log("CustomCanvas.addPosition: Finished repaint()");
-		}
-
-		void drawOverlay(Graphics g) {
-			log("In CustomCanvas.drawOverlay");
-			for (int i = 0; i < number; i++) {
-				g.setColor(Color.green);
-				g.drawRect(xPosition[i], yPosition[i], width[i], height[i]);
-				g.drawString(Integer.toString(i + 1), xPosition[i] + 2,
-						yPosition[i] + 10);
-			}
-		}
-	} // Custom Canvas
+//	class CustomCanvas extends ImageCanvas {
+//		public static final long serialVersionUID = 1;
+//		
+//		int[] xPosition;
+//		int[] yPosition;
+//		int[] height;
+//		int[] width;
+//		boolean[] dead;
+//		static final int number = 200;
+//		int index;
+//
+//		CustomCanvas(ImagePlus imp) {
+//			super(imp);
+//			log("CustomCanvas constructor: imp = " + imp);
+//			xPosition = new int[number];
+//			yPosition = new int[number];
+//			height = new int[number];
+//			width = new int[number];
+//			dead = new boolean[number];
+//			index = 0;
+//		}
+//
+//		@Override
+//		public void paint(Graphics g) {
+//			log("CustomCanvas.paint");
+//			super.paint(g);
+//			drawOverlay(g);
+//
+//			log("CustomCanvas.paint!");
+//		}
+//		
+// 		public void addPosition(int x, int y, int h, int w)// , boolean d)
+//		{
+//			log("CustomCanvas.addPosition");
+//			xPosition[index] = x;
+//			yPosition[index] = y;
+//			height[index] = h;
+//			width[index] = w;
+//			// dead[index]=d;
+//			index++;
+//			log("CustomCanvas.addPosition: about to call repaint()");
+//			repaint();
+//			log("CustomCanvas.addPosition: Finished repaint()");
+//		}
+//
+//		void drawOverlay(Graphics g) {
+//			log("In CustomCanvas.drawOverlay");
+//			for (int i = 0; i < number; i++) {
+//				g.setColor(Color.green);
+//				g.drawRect(xPosition[i], yPosition[i], width[i], height[i]);
+//				g.drawString(Integer.toString(i + 1), xPosition[i] + 2,
+//						yPosition[i] + 10);
+//			}
+//		}
+//	} // Custom Canvas
 
 	// These next three methods are probably implemented elsewhere and could
 	// rewritten to use standard utility methods
