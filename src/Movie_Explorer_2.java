@@ -113,10 +113,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	static final String SHOW_ALL_FOR_SELECTED = "Show all regions for selected track";
 	static final String SHOW_ACTIVE_FOR_ALL = "Show active regions for all tracks";
 	static final String SHOW_ALL_FOR_ALL = "Show regions for all tracks";
-	
-	static final String PLOT_MEAN = "Mean";
-	static final String PLOT_STANDARD_DEVIATION = "SD";
-	
+		
 	// GUI Components
 	protected Rectangle frame = null;
 	protected JButton addNewTrack, addKeyframe, allTimecourse, clearAllTimecourses, showFrameNumber;
@@ -731,12 +728,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 				SHOW_ALL_FOR_SELECTED, SHOW_ACTIVE_FOR_ALL, SHOW_ALL_FOR_ALL};
 		overlayCbx = new JComboBox(overlayOptions);
 		overlayPnl.add(overlayCbx);
-		
-		JLabel plotOptsLbl = new JLabel("Plot Options: ");
-		overlayPnl.add(plotOptsLbl);
-		String[] plotOptions = {PLOT_MEAN, PLOT_STANDARD_DEVIATION};
-		JComboBox plotOptionsCbx = new JComboBox(plotOptions);
-		overlayPnl.add(plotOptionsCbx);
 		
 		c = new GridBagConstraints();
 		c.gridx = 0;
