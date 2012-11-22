@@ -39,19 +39,26 @@ public class CellTrack extends AbstractListModel {
 	/** The timecourse normalized so that its minimum value is 0, and a maximum
 	 * value of max - min. */
 	private double[] normMinTimecourse;
-
 	/** The maximum value in the timecourse. */
 	private double maxValue;
 	/** The minimum value in the timecourse. */
 	private double minValue;
 
-	/**
-	 * The measurements to make on the region.
-	 */
+	/** The timecourse of Standard Deviation values */
+	private double[] sdTimecourse;
+	/** The maximum SD value in the SD timecourse. */
+	private double maxSdValue;
+	/** The minimum SD value in the SD timecourse. */
+	private double minSdValue;
+	/** The SD timecourse normalized to its maximum and minimum values so that its
+	 * minimum value is 0 and its maximum value is 1. */
+	private double[] normSdTimecourse;
+
+	/** The measurements to make on the region. */
 	int defaultMeasurements = Measurements.AREA + Measurements.STD_DEV + 
 												    Measurements.MEAN;
 
-			/**
+  /**
 	 * Constructor: sets fields, computes the timecourse, and notifies
 	 * associated ListDataListeners (i.e., lists of keyframes) of its
 	 * contents.
@@ -170,6 +177,24 @@ public class CellTrack extends AbstractListModel {
 	}
 	
 	/**
+	 * Gets a clone of the current standard deviation timecourse.
+	 *
+	 * @return The standard deviation timecourse.
+	 */
+	public double[] getSdTimecourse() {
+		return this.sdTimecourse.clone();
+	}
+
+	/**
+	 * Gets a clone of the current normalized standard deviation timecourse.
+	 *
+	 * @return The normalized standard deviation timecourse.
+	 */
+	public double[] getNormSdTimecourse() {
+		return this.normSdTimecourse.clone();
+	}
+
+	/**
 	 * Gets a clone of the normalized timecourse. As with getTimecourse,
 	 * this implies that the caller of this method cannot use the returned
 	 * reference to modify the contents of the timecourse array.
@@ -226,8 +251,12 @@ public class CellTrack extends AbstractListModel {
 		this.timecourse = new double[numPoints]; 		
 		this.normTimecourse = new double[numPoints];
 		this.normMinTimecourse = new double[numPoints];
+		this.sdTimecourse = new double[numPoints];
+		this.normSdTimecourse = new double[numPoints];
 		this.maxValue = Double.NEGATIVE_INFINITY;
 		this.minValue = Double.POSITIVE_INFINITY;
+		this.maxSdValue = Double.NEGATIVE_INFINITY;
+		this.minSdValue = Double.POSITIVE_INFINITY;
 
 		// If (for an inexplicable reason) there are no keyframes, let the 
 		// timecourse be as initialized, as full of zeros
@@ -246,109 +275,27 @@ public class CellTrack extends AbstractListModel {
 			imgProcessor.setRoi(roi);
 			ImageStatistics stats = ImageStatistics.getStatistics(imgProcessor,
 																						defaultMeasurements, cal);
-			
-//			double value = 0.0;
-//			int backgroundPixels = 0;
-//			double runningTotal = 0.0;
-//			int totalPixels = 0;
-//			double mean = 0.0;
-//			double standard_deviation = 0.0;
-//			double sum_sq_err = 0.0;
-//			
+		
 			if (i >= nextKf.getFrame()) {
 				roi = nextKf.getRoi();
 				if (iter.hasNext())
 					nextKf = iter.next();
 			}
-//
-//			// If no roi is selected for this track, skip over the calculation
-//			if (roi != null) { 
-//				Movie_Explorer_2.logloop("Update timecourse: Roi is not null");
-//				
-//				Rectangle rect = roi.getBounds();
-//				double [] allValues = new double[rect.x * rect.y];
-//				Movie_Explorer_2.logloop("declared array of values");
-//				
-//				// Loop for Y-Values of roi
-//				for (int y = rect.y; y < rect.y + rect.height; y++) { 
-//					// Loop for X-Values of roi
-//					for (int x = rect.x; x < rect.x + rect.width; x++) { 						
-//						// Don't count pixels outside the region
-//						if (roi.contains(x, y)) {
-//	  					allValues[totalPixels] += imgProcessor.getPixelValue(x, y); 
-//	  					runningTotal += allValues[totalPixels];
-//							totalPixels++;
-//						}
-//						//if (imgProcessor.getPixelValue(x, y) <= 0) {
-//						//	backgroundPixels++;
-//						//}
-//						// Calculate running total of the ratio inside the ROI
-//						//else {
-//						//	value += imgProcessor.getPixelValue(x, y); 
-//						//}
-//					}
-//				}
-//				
-//				// If the whole region is background, value is 0
-//				//if (roi.height * roi.width - backgroundPixels <= 0) {
-//				//	value = 0;
-//				//	
-//				//}
-//				// Otherwise, calculate the average over the signal pixels
-//				//else {
-//				//value = value / (rect.height * rect.width - backgroundPixels);			
-//				//value = value / totalPixels;
-//				//}
-//				
-//				// Calculate the mean
-//				//for (int p = 0; p < totalPixels; p++) {
-//				//	mean += allValues[p];
-//				//}
-//				mean = runningTotal / totalPixels;
-//				Movie_Explorer_2.logloop("mean value: " + Double.toString(mean));
-//				
-//				// Calculate the SD
-//				for (int p = 0; p < totalPixels; p++) {
-//					sum_sq_err += Math.pow((allValues[p] - mean), 2);
-//				}
-//				if (totalPixels >= 2) {
-//					standard_deviation = Math.sqrt( (1/((double) totalPixels-1)) * sum_sq_err);
-//				}
-//				else {
-//					standard_deviation = 0.0;
-//				}
-//				
-//				Movie_Explorer_2.logloop("SD value: " + Double.toString(standard_deviation));
 
-				/*
-				// CALCULATE THE STANDARD DEVIATION
-				// HACK--THIS SHOULD ONLY BE SD IF THE USER CHOOSES THAT OPTION
-				// Loop for Y-Values of roi
-				for (int y = roi.y; y < roi.y + roi.height; y++) { 
-					// Loop for X-Values of roi
-					for (int x = roi.x; x < roi.x + roi.width; x++) { 
-						// Don't count background pixels
-						if (imgProcessor.getPixelValue(x, y) <= 0) {
-							backgroundPixels++;
-						}
-						// Calculate running total of the differences from the mean
-						else {
-							double difference = imgProcessor.getPixelValue(x, y) - mean; 
-							standard_deviation += (difference * difference);
-						}
-					}
-				}
-				standard_deviation = standard_deviation / (roi.height * roi.width - backgroundPixels);			
-				standard_deviation = Math.sqrt(standard_deviation);			
-				value = standard_deviation;
-				*/
-			//} // end check of roi
+			// Append the SD
+			this.sdTimecourse[i-1] = stats.stdDev;
 
-			//double value = stats.stdDev;
+			// Update the min and max SD values (for normalization)
+			if (stats.stdDev > this.maxSdValue) {
+					this.maxSdValue = stats.stdDev;
+			}
+			if (stats.stdDev < this.minSdValue) {
+				this.minSdValue = stats.stdDev;
+			}
+
+			// Append the Mean
 			double value = stats.mean;
-			
-			//value = standard_deviation;
-			
+
 			if (value < 0) {
 				value = 0;
 			}
@@ -357,7 +304,8 @@ public class CellTrack extends AbstractListModel {
 			}
 			
 			this.timecourse[i-1] = value;
-			
+
+			// Update the min and max values (for normalization)
 			if (value > this.maxValue) {
 					this.maxValue = value;
 			}
@@ -370,12 +318,21 @@ public class CellTrack extends AbstractListModel {
 		
 		// Create a list of normalized ratio values
 		for (int i = 0; i < numPoints; i++) {
+			// Normalize the mean
 			if (maxValue - minValue > 0) {
 				normTimecourse[i] = (timecourse[i] - minValue) / (maxValue - minValue);
 				normMinTimecourse[i] = timecourse[i] - minValue;
 			}
 			else {
 				normTimecourse[i] = 0;
+			}
+
+			// Normalize the SD
+			if (maxSdValue - minSdValue > 0) {
+				normSdTimecourse[i] = (sdTimecourse[i] - minSdValue) / (maxSdValue - minSdValue);
+			}
+			else {
+				normSdTimecourse[i] = 0;
 			}
 		}
 	} // end getTimecourse
@@ -455,6 +412,14 @@ public class CellTrack extends AbstractListModel {
 	public double getMinValue() {
 		//IJ.log("CellTrack.getMinValue, minValue = " + minValue);
 		return minValue;
+	}
+
+	public double getMinSdValue() {
+		return minSdValue;
+	}
+
+	public double getMaxSdValue() {
+		return maxSdValue;
 	}
 
 	public int getId() {

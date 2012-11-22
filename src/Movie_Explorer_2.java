@@ -99,9 +99,12 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 
 	// Constants related to gui
 	static final String PLOT_CURRENT_ROI = "Plot Current Region";
+	static final String PLOT_CURRENT_ROI_SD = "Plot Current Region, SD";
 	static final String PLOT_SELECTED_TRACK = "Plot Selected Track";
+	static final String PLOT_SELECTED_TRACK_SD = "Plot Selected Track, SD";
 	static final String PLOT_SELECTED_CONTROL_SUBTRACTED = "Plot Selected, Control Subtracted";	
 	static final String PLOT_ALL_TRACKS = "Plot All Tracks";
+	static final String PLOT_ALL_TRACKS_SD = "Plot All Tracks, SD";
 	static final String PLOT_ALL_TRACKS_NORMALIZED_MIN = "Plot All Tracks, Normalized Min";
 	static final String PLOT_ALL_TRACKS_NORMALIZED = "Plot All Tracks, Normalized Min/Max";
 	static final String PLOT_ALL_CONTROL_SUBTRACTED = "Plot All Tracks, Control Subtracted";	
@@ -164,7 +167,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	
 	/** Logging switches. */
 	private static boolean logging = true;
-	private static boolean loopLogging = true;
+	private static boolean loopLogging = false;
 	
 	/** The instance of the associated timecourse plotter. */
 	TimecoursePlotter tcp;
@@ -186,7 +189,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		thread = new Thread(this, "Movie Explorer 2");
 		thread.start();		// Start running showPlot()
 	}
-
 
 	/**
 	 * The main run loop, refreshes the trajectory plot every 200ms.
@@ -269,23 +271,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	}
 
 	/**
-	 * Clears the plotting window and calls drawCurves and drawText.
-	 */
-	protected void drawPlot(ImageProcessor ip, TempCellTrack tempTrack) {
-		logloop("in drawPlot");
-		if (ip == null) {
-			shutDown();
-			return;
-		}
-	
-		clear(ip);
-		drawCurves(ip, tempTrack);
-		logloop("drawPlot: returned from drawCurves");
-		drawText(ip, tempTrack);
-		logloop("drawPlot: returned from drawText");
-	}
-
-	/**
 	 * Blanks out the entire plotting window.
 	 */
 	void clear(ImageProcessor ip) {
@@ -311,9 +296,26 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	 * Draws the trajectory and saves the pixel data  for the trajectory
 	 * in the ImageProcessor object.
 	 */
-	void drawCurves(ImageProcessor ip, TempCellTrack tempTrack) {
-		logloop("in drawCurves");
-		double[] valuesToPlot; // = new double[numPoints];
+	protected void drawPlot(ImageProcessor ip, TempCellTrack tempTrack) {
+		logloop("in drawPlot");
+		if (ip == null) {
+			shutDown();
+			return;
+		}
+
+		clear(ip);
+
+		double[] valuesToPlot = new double[numPoints];
+
+		int timestep = (int) (PLOT_WIDTH / this.numPoints);
+
+		// Draw first and last frame numbers
+		ip.setFont(new Font("SansSerif", Font.PLAIN, 10));
+		ip.drawString(d2s(1), XMARGIN, YMARGIN + PLOT_HEIGHT + 15);
+		ip.drawString(d2s(numPoints), XMARGIN + numPoints * timestep, YMARGIN
+				+ PLOT_HEIGHT + 15);
+		ip.drawString("Frame", XMARGIN + numPoints * timestep / 2 - 10, YMARGIN
+				+ PLOT_HEIGHT + 25);
 
 		// Draw plot border
 		ip.setColor(Color.black);
@@ -326,11 +328,14 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		ip.drawLine(XMARGIN, (int) (PLOT_HEIGHT * 0.5) + YMARGIN, XMARGIN
 				+ PLOT_WIDTH, (int) (PLOT_HEIGHT * 0.5) + YMARGIN);
 				
-		int timestep = (int) (PLOT_WIDTH / this.numPoints);
+		// The min and max values of the plots
+		double minVal = -100;
+		double maxVal = 100;
 
 		// should we plot all saved timecourses?
 		//if (PlotAllTimecoursesCheckBox.isSelected() && this.cellTracks.getSize() > 0) {
 		if ((plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS) ||
+         plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_SD) ||
   			 plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED_MIN) ||
 				 plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED) ||
 				 plotTypeCbx.getSelectedItem().equals(PLOT_ALL_CONTROL_SUBTRACTED)) 
@@ -345,6 +350,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 			double ctrlSubMinVal = Double.POSITIVE_INFINITY;
 			double ctrlSubMaxVal = Double.NEGATIVE_INFINITY;
 			
+			// Set the max and min values for normalization of the plots
 			if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_CONTROL_SUBTRACTED)) {
 				for (int b = 0; b < this.cellTracks.getSize(); b++) {
 					CellTrack track = this.cellTracks.getElementAt(b);
@@ -363,25 +369,15 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 					}
 				}
 			}
-			// --------------------------------------------------------------------
 
+			// Iterate over all tracks
 			for (int b = 0; b < this.cellTracks.getSize(); b++) {
 				CellTrack track = this.cellTracks.getElementAt(b);
-				valuesToPlot = track.getTimecourse();
 
-				// Set the max and min values for normalization of the plots
-				double minVal;
-				double maxVal;
-			
-				if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS)) {
-					minVal = cellTracks.getMinValue();
-					maxVal = cellTracks.getMaxValue();
-				}
-				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED_MIN)) {
-					minVal = track.getMinValue();
-					maxVal = cellTracks.getMaxValue();
-				}
-				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_CONTROL_SUBTRACTED)) {
+				if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_CONTROL_SUBTRACTED)) {
+					minVal = ctrlSubMinVal;
+					maxVal = ctrlSubMaxVal;
+
 					// First, get the timecourse normalized to its minimum
 					valuesToPlot = track.getNormMinTimecourse();
 					// Now subtract out the control timecourse, which has also been
@@ -389,19 +385,40 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 					for (int i = 0; i < valuesToPlot.length; i++) {						
 						valuesToPlot[i] -= controlTimecourse[i];
 					}					
-					// Setting these to be the across-the-board minima
-					minVal = ctrlSubMinVal; 
-					maxVal = ctrlSubMaxVal; 
 				}
-				else { // i.e., all tracks, normalized to min/max
-					minVal = track.getMinValue();
-					maxVal = track.getMaxValue();
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS)) {
+					minVal = cellTracks.getMinValue();
+					maxVal = cellTracks.getMaxValue();
+					valuesToPlot = track.getTimecourse();
 				}
-								
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_SD)) {
+					minVal = cellTracks.getMinSdValue();
+					maxVal = cellTracks.getMaxSdValue();
+					valuesToPlot = track.getSdTimecourse();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED_MIN)) {
+					minVal = 0;
+					maxVal = cellTracks.getNormMaxValueForMaxTrack();
+					valuesToPlot = track.getNormMinTimecourse();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED)) { // i.e., all tracks, normalized to min/max
+					minVal = 0;
+					maxVal = 1;
+					valuesToPlot = track.getNormTimecourse();
+				}
+				else if (this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
+					logloop("Not plotting, no tracks saved.");
+				}
+				else {
+					log("Error! Unrecognized plot selection.");
+				}
+
+				// Low pass filter?
 				if (LowPassFilterCheckBox.isSelected()) {
 					valuesToPlot = lowPassFilter(valuesToPlot);
 				}
 				
+				// Iterate over all values in the timecourse
 				for (int i = 0; i < valuesToPlot.length; i++) {
 					double thisVal = (double) ((valuesToPlot[i] - minVal) / (maxVal - minVal));
 
@@ -418,14 +435,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 
 					// Draw Points
 					if (DrawPointsCheckBox.isSelected()) {
-						// starts at 2 for lines and want to plot point 1 also
-						// TODO this seems screwy, this will never happen
-						//if (i == 2) {
-						//	ip.fillOval(1 * timestep + XMARGIN - 2, PLOT_HEIGHT
-						//			- (int) (valuesToPlot[1] * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
-						//}
-						//ip.fillOval((i+1) * timestep + XMARGIN - 2, PLOT_HEIGHT
-						//		- (int) (thisVal * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
 						ip.fillOval((i+1) * timestep + XMARGIN - 2, PLOT_HEIGHT
 								- (int) (thisVal * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
 					}
@@ -446,24 +455,31 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 				}
 			}
 		} // --end plot saved timecourses
-		else // only plot the current timecourse
-		{			
+		else { // only plot the current timecourse
 			if ((plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_TRACK) ||
+					plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_TRACK_SD) ||
 					plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_CONTROL_SUBTRACTED))
 					&& this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
 				logloop("Plotting selected track");
 				CellTrack track = (CellTrack) savedCellCbx.getSelectedItem();
 
 				if (plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_TRACK)) {
-					valuesToPlot = track.getNormTimecourse();				
+					valuesToPlot = track.getTimecourse();
+					maxVal = track.getMaxValue();
+					minVal = track.getMinValue();
 				}
-				else {
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_TRACK_SD)) {
+					valuesToPlot = track.getSdTimecourse();
+					maxVal = track.getMaxSdValue();
+					minVal = track.getMinSdValue();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_CONTROL_SUBTRACTED)) {
 					// -------------------------------------------------------------------
 					// THIS IS A HACK. THIS CODE SHOULD REALLY BE IMPLEMENTED IN THE
 					// CELL TRACK LIST AND THE CONTROL SUBTRACTED TIMECOURSES SHOULD BE
 					// CALCULATED WHENEVER UPDATETIMECOURSES IS CALLED.
-					double minVal = Double.POSITIVE_INFINITY;
-					double maxVal = Double.NEGATIVE_INFINITY;
+					minVal = Double.POSITIVE_INFINITY;
+					maxVal = Double.NEGATIVE_INFINITY;
 					valuesToPlot = track.getNormMinTimecourse();
 					for (int i = 0; i < valuesToPlot.length; i++) {
 						valuesToPlot[i] -= this.controlTimecourse[i];
@@ -479,6 +495,12 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 						valuesToPlot[i] = (valuesToPlot[i] - minVal) / (maxVal - minVal);
 					}					
 					// -------------------------------------------------------------------
+				}
+				else if (this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
+					logloop("Not plotting, no tracks saved.");
+				}
+				else {
+					log("Error! Unrecognized plot selection.");
 				}
 			
 				// If we're plotting the selected track, draw vertical lines at every
@@ -499,43 +521,51 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 				}
 				ip.setColor(Color.black);
 			}
-			else {
+			else if (plotTypeCbx.getSelectedItem().equals(PLOT_CURRENT_ROI_SD)) {
+				logloop("Plotting SD of current ROI");
+				valuesToPlot = tempTrack.getSdTimecourse();
+				maxVal = tempTrack.getMaxSdValue();
+				minVal = tempTrack.getMinSdValue();
+			}
+			else if (plotTypeCbx.getSelectedItem().equals(PLOT_CURRENT_ROI)) {
 				logloop("Plotting current ROI");
 				//valuesToPlot = ValueListNorm;
-				valuesToPlot = tempTrack.getNormTimecourse();
+				valuesToPlot = tempTrack.getTimecourse();
+				maxVal = tempTrack.getMaxValue();
+				minVal = tempTrack.getMinValue();
 				logloop("got value to Plot: length is " + valuesToPlot.length);
+			}
+			else if (this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
+				logloop("Not plotting, no tracks saved.");
+			}
+			else {
+				log("Error! Unrecognized plot option.");
 			}
 
 			if (LowPassFilterCheckBox.isSelected()) {
 				valuesToPlot = lowPassFilter(valuesToPlot);
 				//valuesToPlot = lowPassFilter(ValueListNorm);
 			}
-			
-			for (int i = 0; i < valuesToPlot.length; i++) {
-				if (DrawPointsCheckBox.isSelected()) {
-					ip.setColor(getColor(valuesToPlot[i]));
-					// starts at 2 for lines and want to plot point 1 also
-					
-					//ip.fillOval(i * timestep + XMARGIN - 2, PLOT_HEIGHT
-					//		- (int) (thisVal * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
 
-					//if (i == 2) {
-					//	ip.fillOval(1 * timestep + XMARGIN - 2, PLOT_HEIGHT
-					//			- (int) (valuesToPlot[1] * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
-					//}
+			// Iterate over all values in the timecourse
+			for (int i = 0; i < valuesToPlot.length; i++) {
+				double thisVal = (double) ((valuesToPlot[i] - minVal) / (maxVal - minVal));
+
+				if (DrawPointsCheckBox.isSelected()) {
+					ip.setColor(getColor(thisVal));
 					ip.fillOval((i+1) * timestep + XMARGIN - 2, PLOT_HEIGHT
-							- (int) (valuesToPlot[i] * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
+							- (int) (thisVal * PLOT_HEIGHT) + YMARGIN - 2, 4, 4);
 				}
 
 				if (DrawLinesCheckBox.isSelected()) {
 					if (i != 0) {
-						ip.setColor(getColor(valuesToPlot[i]));
+						double lastVal = (double) ((valuesToPlot[i - 1] - minVal) / (maxVal - minVal));
+
+						ip.setColor(getColor(thisVal));
 						int x1 = i * timestep + XMARGIN;
 						int x2 = (i+1) * timestep + XMARGIN;
-						int y1 = PLOT_HEIGHT - (int) (valuesToPlot[i - 1] * PLOT_HEIGHT)
-								+ YMARGIN;
-						int y2 = PLOT_HEIGHT - (int) (valuesToPlot[i] * PLOT_HEIGHT)
-								+ YMARGIN;
+						int y1 = PLOT_HEIGHT - (int) (lastVal * PLOT_HEIGHT) + YMARGIN;
+						int y2 = PLOT_HEIGHT - (int) (thisVal * PLOT_HEIGHT) + YMARGIN;
 						ip.drawLine(x1, y1, x2, y2);
 					}
 				}
@@ -547,115 +577,12 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		ip.drawLine(TheCurrentSlice * timestep + XMARGIN, YMARGIN + 1,
 				TheCurrentSlice * timestep + XMARGIN, (PLOT_HEIGHT + YMARGIN - 1));
 		ip.setColor(Color.black);
-	}
 
-	/**
-	 * Draws the axis labels on the plot.
-	 */
-	void drawText(ImageProcessor ip, TempCellTrack tempTrack) {
-		ip.setFont(new Font("SansSerif", Font.PLAIN, 12));
-
-		int timestep = (int) (PLOT_WIDTH / this.numPoints);
-
-		//int col1 = XMARGIN + 5;
-		//int col2 = XMARGIN + PLOT_WIDTH / 2;
-		//int row1 = YMARGIN + PLOT_HEIGHT + 50;
-		//int row2 = row1 + 15;
-
-		ip.setFont(new Font("SansSerif", Font.PLAIN, 10));
-		ip.drawString(d2s(1), XMARGIN, YMARGIN + PLOT_HEIGHT + 15);
-		ip.drawString(d2s(numPoints), XMARGIN + numPoints * timestep, YMARGIN
-				+ PLOT_HEIGHT + 15);
-		ip.drawString("Frame", XMARGIN + numPoints * timestep / 2 - 10, YMARGIN
-				+ PLOT_HEIGHT + 25);
-////////
-		double minVal, maxVal;
-		
-		if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS)) {
-			minVal = cellTracks.getMinValue();
-			maxVal = cellTracks.getMaxValue();					
-		}
-		else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED_MIN)) {
-			minVal = 0;
-			maxVal = cellTracks.getNormMaxValueForMaxTrack();
-		}
-		else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_CONTROL_SUBTRACTED)) {
-			// --------------------------------------------------------------------
-			// THIS IS A HACK. THIS CODE SHOULD REALLY BE IMPLEMENTED IN THE
-			// CELL TRACK LIST AND THE CONTROL SUBTRACTED TIMECOURSES SHOULD BE
-			// CALCULATED WHENEVER UPDATETIMECOURSES IS CALLED.
-			// Find the minimum background subtracted value across all timecourses
-			double ctrlSubMinVal = Double.POSITIVE_INFINITY;
-			double ctrlSubMaxVal = Double.NEGATIVE_INFINITY;
-			
-			for (int b = 0; b < this.cellTracks.getSize(); b++) {
-				CellTrack track = this.cellTracks.getElementAt(b);
-				// First, get the timecourse normalized to its minimum
-				double[] values = track.getNormMinTimecourse();
-				// Subtract out the control timecourse and check to see if it
-				// is a new min or max
-				for (int i = 0; i < values.length; i++) {						
-					values[i] -= controlTimecourse[i];
-					if (values[i] < ctrlSubMinVal) {
-						ctrlSubMinVal = values[i];
-					}
-					if (values[i] > ctrlSubMaxVal) {
-						ctrlSubMaxVal = values[i];
-					}
-				}
-			}
-			minVal = ctrlSubMinVal;
-			maxVal = ctrlSubMaxVal;
-			// --------------------------------------------------------------------
-		}
-		else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED)) {
-			minVal = 0.0;
-			maxVal = 1.0;
-		}
-		else if (plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_TRACK) &&
-				     this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
-			CellTrack track = (CellTrack) this.savedCellCbx.getSelectedItem();
-			minVal = track.getMinValue();
-			maxVal = track.getMaxValue();
-		}
-		else if (plotTypeCbx.getSelectedItem().equals(PLOT_SELECTED_CONTROL_SUBTRACTED) &&
-		     this.savedCellCbx.getSelectedItem() instanceof CellTrack) {
-			// --------------------------------------------------------------------
-			// THIS IS A HACK. THIS CODE SHOULD REALLY BE IMPLEMENTED IN THE
-			// CELL TRACK LIST AND THE CONTROL SUBTRACTED TIMECOURSES SHOULD BE
-			// CALCULATED WHENEVER UPDATETIMECOURSES IS CALLED.
-			CellTrack track = (CellTrack) this.savedCellCbx.getSelectedItem();
-			double values[] = track.getNormMinTimecourse();
-			double ctrlSubMinVal = Double.POSITIVE_INFINITY;
-			double ctrlSubMaxVal = Double.NEGATIVE_INFINITY;
-
-			for (int i = 0; i < values.length; i++) {						
-				values[i] -= controlTimecourse[i];
-				if (values[i] < ctrlSubMinVal) {
-					ctrlSubMinVal = values[i];
-				}
-				if (values[i] > ctrlSubMaxVal) {
-					ctrlSubMaxVal = values[i];
-				}
-			}
-			// --------------------------------------------------------------------
-			minVal = ctrlSubMinVal;
-			maxVal = ctrlSubMaxVal;
-		}
-		else {
-			minVal = tempTrack.getMinValue();
-			maxVal = tempTrack.getMaxValue();
-		}
-		///////
-		
-		//log("drawText: about to plot min and max text");
+		// Draw min and max values for y-axis
 		ip.drawString(d2s(minVal), XMARGIN + PLOT_WIDTH + 2, YMARGIN
 				+ PLOT_HEIGHT + 8);
-		//log("drawText: returned from minValue");
 		ip.drawString(d2s(maxVal), XMARGIN + PLOT_WIDTH + 2, YMARGIN + 8);
-		//log("drawText: returned from maxValue");
 	}
-
 	
 	/**
 	 * Gets the open images and returns it as an array of ImagePlusWrapper
@@ -742,9 +669,12 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		options.add(updateImgListBtn);
 		//
 		String[] plotTypes = {PLOT_CURRENT_ROI,
+				PLOT_CURRENT_ROI_SD,
 				PLOT_SELECTED_TRACK,
 				PLOT_SELECTED_CONTROL_SUBTRACTED,
+				PLOT_SELECTED_TRACK_SD,
 				PLOT_ALL_TRACKS,
+				PLOT_ALL_TRACKS_SD,
 				PLOT_ALL_TRACKS_NORMALIZED_MIN,
 				PLOT_ALL_TRACKS_NORMALIZED,
 				PLOT_ALL_CONTROL_SUBTRACTED};
@@ -1020,9 +950,8 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		StringBuffer headings = new StringBuffer();
 		headings.append("Frame" + "\t");
 
-		TextWindow tw = new TextWindow(getTitle(), headings.toString(), sb
-				.toString(), 200, 400);
-
+		TextWindow tw = new TextWindow(getTitle(), headings.toString(),
+				sb.toString(), 200, 400);
 	}
 
 	/**
@@ -1053,8 +982,30 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 				}
 				
 				CellTrack track = this.cellTracks.getElementAt(col - 1);
-				double[] timecourse = track.getTimecourse();
-				//double[] timecourse = track.getNormMinTimecourse();
+				double[] timecourse = null;
+
+				if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS)) {
+					timecourse = track.getTimecourse();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_SD)) {
+					timecourse = track.getSdTimecourse();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED_MIN)) {
+					timecourse = track.getNormMinTimecourse();
+				}
+				else if (plotTypeCbx.getSelectedItem().equals(PLOT_ALL_TRACKS_NORMALIZED)) {
+					timecourse = track.getNormTimecourse();
+				}
+				else {
+					String s = "Please select \n\"" +
+										 PLOT_ALL_TRACKS + "\", \n\"" +
+								     PLOT_ALL_TRACKS_SD + "\", \n\"" +
+								     PLOT_ALL_TRACKS_NORMALIZED_MIN + "\", or \n\"" +
+								     PLOT_ALL_TRACKS_NORMALIZED + "\".";
+					IJ.showMessage(s);
+					return;
+				}
+
 				int lastFrame = track.getLastFrame();	
 				if (i > lastFrame - 1) {
 					//sb.append("0\t");
@@ -1585,62 +1536,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	public void lostOwnership(Clipboard clipboard, Transferable contents) {
 	}
 
-//	class CustomCanvas extends ImageCanvas {
-//		public static final long serialVersionUID = 1;
-//		
-//		int[] xPosition;
-//		int[] yPosition;
-//		int[] height;
-//		int[] width;
-//		boolean[] dead;
-//		static final int number = 200;
-//		int index;
-//
-//		CustomCanvas(ImagePlus imp) {
-//			super(imp);
-//			log("CustomCanvas constructor: imp = " + imp);
-//			xPosition = new int[number];
-//			yPosition = new int[number];
-//			height = new int[number];
-//			width = new int[number];
-//			dead = new boolean[number];
-//			index = 0;
-//		}
-//
-//		@Override
-//		public void paint(Graphics g) {
-//			log("CustomCanvas.paint");
-//			super.paint(g);
-//			drawOverlay(g);
-//
-//			log("CustomCanvas.paint!");
-//		}
-//		
-// 		public void addPosition(int x, int y, int h, int w)// , boolean d)
-//		{
-//			log("CustomCanvas.addPosition");
-//			xPosition[index] = x;
-//			yPosition[index] = y;
-//			height[index] = h;
-//			width[index] = w;
-//			// dead[index]=d;
-//			index++;
-//			log("CustomCanvas.addPosition: about to call repaint()");
-//			repaint();
-//			log("CustomCanvas.addPosition: Finished repaint()");
-//		}
-//
-//		void drawOverlay(Graphics g) {
-//			log("In CustomCanvas.drawOverlay");
-//			for (int i = 0; i < number; i++) {
-//				g.setColor(Color.green);
-//				g.drawRect(xPosition[i], yPosition[i], width[i], height[i]);
-//				g.drawString(Integer.toString(i + 1), xPosition[i] + 2,
-//						yPosition[i] + 10);
-//			}
-//		}
-//	} // Custom Canvas
-
 	// These next three methods are probably implemented elsewhere and could
 	// rewritten to use standard utility methods
 	public Color getColor(double val) {
@@ -1663,38 +1558,6 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 		return v1;
 	}
 	// end three methods
-
-	/**
-	 * Low-pass filter the data by simply doing a 5-point running average
-	 * 
-	 * @author BLM
-	 */
-	private double[] lowPassFilterBLM(double[] data) {
-		int filterLen = 4;
-		int len = data.length;
-		double[] avgData = new double[len];
-		double val = 0;
-		for (int i = 0; i < len; i++) {
-			if (i < (int) (filterLen / 2f)) {
-				// for (int j = i; j < (int)(i+filterLen); j++)
-				// val+=data[j];
-				// val=val/(filterLen);
-				// avgData[i] = val;
-			} else if (i > len - (int) (filterLen / 2f)) {
-				// for (int j = i; j < len; j++)
-				// val+=data[j-i];
-				// val=val/(filterLen);
-				// avgData[i] = val;
-			} else {
-				for (int j = (i - (int) (filterLen / 2f)); j < (i + (int) (filterLen / 2f)); j++)
-					val += data[j];
-
-				val = val / (1 + filterLen);
-				avgData[i] = val;
-			}
-		}
-		return avgData;
-	} // end lowPassFilter
 
 	/**
 	 * Low-pass filter the data by simply doing a 4-point running average

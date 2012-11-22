@@ -13,17 +13,33 @@ public class TempCellTrack {
 	public double[] getTimecourse() {
 		return track.getTimecourse();
 	}
-	
+
+	public double[] getSdTimecourse() {
+		return track.getSdTimecourse();
+	}
+
+	public double[] getNormSdTimecourse() {
+		return track.getNormSdTimecourse();
+	}
+
 	public double[] getNormTimecourse() {
 		return track.getNormTimecourse();
 	}
 	
 	public double getMinValue() {
-		//IJ.log("TempCellTrack.getMinValue: about to call CellTrack.getMinValue");
 		return track.getMinValue();
 	}
 	
 	public double getMaxValue() {
 		return track.getMaxValue();
 	}
+
+	public double getMinSdValue() {
+		return track.getMinSdValue();
+	}
+
+	public double getMaxSdValue() {
+		return track.getMaxSdValue();
+	}
+
 }

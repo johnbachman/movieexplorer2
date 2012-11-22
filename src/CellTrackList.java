@@ -97,6 +97,32 @@ public class CellTrackList extends DefaultComboBoxModel
 	}
 	
 	/**
+	 * Get the smallest SD value in the whole track list.
+	 */
+	public double getMinSdValue() {
+		double minValue = Double.MAX_VALUE;
+		for (int i = 0; i < this.getSize(); i++) {
+			CellTrack track = getElementAt(i);
+			if (track.getMinSdValue() < minValue)
+				minValue = track.getMinSdValue();
+		}
+		return minValue;
+	}
+
+	/**
+	 * Get the largest SD value in the whole track list.
+	 */
+	public double getMaxSdValue() {
+		double maxValue = Double.MIN_VALUE;
+		for (int i = 0; i < this.getSize(); i++) {
+			CellTrack track = getElementAt(i);
+			if (track.getMaxSdValue() > maxValue)
+				maxValue = track.getMaxSdValue();
+		}
+		return maxValue;
+	}
+
+	/**
 	 * Gets the max minus min value (i.e., the maximum value after normalizing the
 	 * minimum to zero) for the track that has the maximum such value across
 	 * the entire track list. Needed for proper labeling of the axes when
@@ -188,6 +214,5 @@ public class CellTrackList extends DefaultComboBoxModel
 		}
 		return allOverlays;
 	}
-
 	
 }
