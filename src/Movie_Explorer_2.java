@@ -166,7 +166,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 	protected CellTrack currentTrack = null;
 	
 	/** Logging switches. */
-	private static boolean logging = true;
+	private static boolean logging = false;
 	private static boolean loopLogging = false;
 	
 	/** The instance of the associated timecourse plotter. */
@@ -827,7 +827,7 @@ public class Movie_Explorer_2 extends PlugInFrame implements Measurements, Actio
 
 		JPanel savePanel = new JPanel(new GridLayout(5,1));
 		//savePanel.setBorder(BorderFactory.createLineBorder(Color.black));
-		allTimecourse = new JButton("Get All Timecourses");
+		allTimecourse = new JButton("Get Plotted Timecourses");
 		allTimecourse.addActionListener(this);
 		savePanel.add(allTimecourse);
 		showFrameNumber = new JButton("Show Frame Numbers");
